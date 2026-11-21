@@ -395,6 +395,11 @@ function render(){
  else if(s.winner){st.className="win";st.textContent=rl?(rl===s.winner?"🎉 あなたの勝ち!":(nm2[s.winner]||"相手")+"の勝ち"):(nm2[s.winner]||nm[s.winner])+"の勝ち!"}
  else if(rl)st.textContent=rl===s.turn?"あなたの番です":(nm2[s.turn]||"相手")+"の番です…";
  else st.textContent="観戦中:"+(nm2[s.turn]||nm[s.turn])+"の番";
+ var canUndo=!!(s&&rl&&s.history&&!s.history.undone);
+ var canRedo=!!(s&&rl&&s.history&&s.history.undone);
+ $('undo').disabled=!canUndo;
+ $('redo').hidden=!canRedo;
+ $('redo').disabled=!canRedo;
  paintHover();
  if(newMove){if(s.winner&&s.winner!=="D"){beep(rl===s.winner?660:300,.4)}else beep(440,.12)}
  scheduleResult(s,hadWinner);
@@ -416,8 +421,22 @@ function timeTravel(redo){
  if(!state||!role()||busy||!state.history)return;
  var h=state.history;if(redo?!h.undone:h.undone)return;
  var expected=redo?h.before:h.after,restore=redo?h.after:h.before;
- guard(function(){return firebase.database().ref("games/"+room).transaction(function(current){if(!current||!current.history||!!current.history.undone!==!!h.undone||current.board!==expected.board||current.moves!==expected.moves)return;
- var next=Object.assign({},current,restore);next.history=Object.assign({},current.history,{undone:!redo});return next},undefined,false).then(function(result){if(!result.committed)toast("すでに盤面が変わっています")})});
+ // Firebase confirms the transaction before closing the result overlay.
+ guard(function(){return firebase.database().ref("games/"+room).transaction(function(current){
+  if(!current||!current.history||!!current.history.undone!==!!h.undone||current.board!==expected.board||current.moves!==expected.moves)return;
+  var next=Object.assign({},current,restore);
+  next.history=Object.assign({},current.history,{undone:!redo});
+  return next;
+ },undefined,false).then(function(result){
+  if(!result.committed){toast("すでに盤面が変わっています");return}
+  // Immediately restore the actual game view on both devices via realtime state.
+  var updated=result.snapshot&&result.snapshot.val();
+  if(updated){state=updated;render()}
+  if(!redo){
+   clearTimeout(resultTimer);lastResultKey='';$('resultScreen').hidden=true;
+   clearDrag();
+  }
+ })});
 }
 function again(){
  if(!state||!role()||busy)return;
@@ -432,7 +451,9 @@ function onSnap(snap){
   if(!claimed){claimed=true;
    db.doc("games/"+room).set({board:EMPTY,turn:"R",starter:"R",last:-1,moves:0,winner:null,winLine:[],scores:{R:0,Y:0},streak:{R:0,Y:0},best:{R:0,Y:0},names:{R:myName,Y:""},avatars:{R:avatarData||null,Y:null},players:{R:me,Y:null}}).catch(function(){claimed=false;$("status").textContent="部屋を作れませんでした(権限を確認してください)"})}
   return}
- state=snap.data();var p=state.players||{};
+ state=snap.data();
+ if(!state.winner){clearTimeout(resultTimer);lastResultKey='';$('resultScreen').hidden=true}
+ var p=state.players||{};
  if(p.R!==me&&p.Y!==me&&!p.Y&&!claimed){claimed=true;
   db.doc("games/"+room).update({players:{R:p.R,Y:me},names:{R:(state.names||{}).R||"",Y:myName},avatars:{R:(state.avatars||{}).R||null,Y:avatarData||null}}).catch(function(){claimed=false})}
  syncName();syncAvatar();
