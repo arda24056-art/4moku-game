@@ -129,10 +129,22 @@ body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7
 .gradient-settings input{width:40px;height:32px;border:0;background:none}
 @media(prefers-reduced-motion:reduce){.result-card{animation:none}.cell.drop::after,.cell.win::after{animation:none}}
 
+/* Visible controls and confirmation on iPhone/Android */
+.room-delete{white-space:nowrap;flex:none;color:#c6314b!important;border-color:#d88b99!important;font-size:13px!important;padding:9px 10px!important}
+#deleteDialog{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px}
+#deleteDialog[hidden]{display:none!important}
+.delete-panel{width:min(100%,400px);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;color:var(--fg);box-shadow:0 15px 45px #0006}
+.delete-panel h2{margin:0 0 10px;font-size:21px}.delete-panel p{line-height:1.6;overflow-wrap:anywhere}.delete-warning{color:#d7465c;font-size:13px}.delete-actions{display:flex;gap:10px}.delete-actions button{flex:1;min-height:48px}.delete-actions #deleteConfirm{background:#c6314b;color:#fff;border-color:#c6314b}
+#pal{z-index:80!important;right:10px!important;bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;width:min(380px,calc(100vw - 20px))!important;max-height:calc(100dvh - 110px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+#palBtn{z-index:81!important}
+#pal .theme-row input,#pal .gradient-settings input{min-width:44px;min-height:38px}
+#resultLobby{display:block!important;min-height:48px;margin-top:12px!important}
 /* Personalization v3 */
 :root{--custom-btn:#33253d;--custom-btn-text:#ffffff;--custom-hole:#dfe6fb;--custom-board:#2f5fd0;--custom-outline:#ffffff}
 .board{background:var(--custom-board)!important}.cell{background:var(--custom-hole)!important}.cell.last{outline-color:var(--custom-outline)!important}
 button.b.pri,#resultNext{background:var(--custom-btn)!important;color:var(--custom-btn-text)!important;border-color:var(--custom-btn)!important}
+button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
+#resultLobby{border-color:var(--custom-btn)!important}
 #pal{max-height:78dvh;overflow:auto;width:min(340px,calc(100vw - 28px))}
 .theme-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
 .theme-row label{display:flex;align-items:center;justify-content:space-between;font-size:12px;gap:5px;padding:7px 5px;border:1px solid var(--line);border-radius:9px}
@@ -171,16 +183,16 @@ button.b.pri,#resultNext{background:var(--custom-btn)!important;color:var(--cust
    <button class="b" id="redo" hidden>↷ 戻す前に進む</button>
   <button class="b" id="copy">招待リンクをコピー</button>
   <button class="b" id="newRoom">ロビーへ</button>
-  <button class="b" id="rename">名前・アイコン</button><button class="b" id="themeGame">🎨 色を変更</button>
+  <button class="b" id="rename">名前・アイコン</button><button class="b" id="themeGame">🎨 駒・ボタンの色を変更</button>
   <button class="b" id="snd">🔊 音</button>
 </div>
 <p class="note">縦・横・斜めに4つ揃えたら勝ち。列をタップして置きます。<span class="kb">(キーボードの 1〜7 でも可)</span><br>最初に入った2人が対戦者、3人目以降は観戦です。</p>
 </main>
 <main id="lobby" hidden>
-<h1>ロビー <small id="meLbl"></small></h1>
+<h1>ロビー <small id="meLbl"></small></h1><p class="note" style="text-align:left;margin:2px 0 12px">🎨「色を変更」で駒・盤面・ボタン・背景を変更できます。部屋の削除は確認後に実行されます。</p>
 <div class="card"><b>新規部屋を作成</b><div class="row"><input id="rn" maxlength="20" placeholder="部屋の名前を付けてね" autocomplete="off"><button class="b pri" id="mk">作成</button></div><div id="rnErr"></div></div>
 <h2 class="sec">部屋一覧</h2><div id="rooms"></div>
-<div class="btns"><button class="b" id="lobRename">名前・アイコン</button><button class="b" id="themeLobby">🎨 色を変更</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
+<div class="btns"><button class="b" id="lobRename">👤 名前・写真アイコン</button><button class="b" id="themeLobby">🎨 駒・ボタンの色を変更</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
 </main>
 <button class="b" id="palBtn" aria-label="背景色">🎨</button>
 <div id="pal" hidden><button type="button" class="b" id="closePal" style="width:100%;margin-bottom:8px">✕ 設定を閉じる</button><div id="sws"></div><div class="gradient-settings"><label>上の色 <input type="color" id="bgTop" value="#f7e7ef"></label><label>下の色 <input type="color" id="bgBottom" value="#e7e8fa"></label></div><label class="cl">単色にする <input type="color" id="cbg" value="#f4f5f8"></label><div style="font-weight:700;font-size:13px;margin-top:12px">ゲーム全体の色を変更</div>
@@ -220,6 +232,7 @@ button.b.pri,#resultNext{background:var(--custom-btn)!important;color:var(--cust
  </section>
 </div>
 <div id="gate"><div class="gc"><div class="logo">🔴🟡</div><h2>4目並べ</h2><p>名前を入れて入室しよう</p><input id="nm" maxlength="12" placeholder="名前(12文字まで)" autocomplete="off"><div id="nmErr"></div><button class="b pri" id="go">はじめる</button></div></div>
+<div id="deleteDialog" hidden role="dialog" aria-modal="true" aria-labelledby="deleteTitle"><section class="delete-panel"><h2 id="deleteTitle">部屋を削除しますか？</h2><p id="deleteDesc"></p><p class="delete-warning">この操作は取り消せません。対局中のデータも削除されます。</p><div class="delete-actions"><button type="button" class="b" id="deleteCancel">キャンセル</button><button type="button" class="b" id="deleteConfirm">部屋を削除する</button></div><p id="deleteError" role="status"></p></section></div>
 <div id="avatarStage" hidden role="dialog" aria-modal="true" aria-labelledby="avatarTitle"><section class="avatar-panel">
 <h2 id="avatarTitle">プロフィールアイコンを設定</h2><p>写真アプリ・ファイルから画像を選べます。名前の横に丸く表示され、対戦相手にも共有されます。</p>
 <img id="avatarPreview" class="avatar-large" alt="アイコンのプレビュー" src="" hidden>
@@ -366,7 +379,7 @@ function onSnap(snap){
  render();
 }
 function route(){var r=getRoom();if(r){if(r===room&&!$("game").hidden)return;start()}else showLobby()}
-function showLobby(){
+function showLobby(){if($("resultScreen"))$("resultScreen").hidden=true;
  if(unsub){unsub();unsub=null}clearTimeout(onSnap.t);state=null;prev=null;room="";
  $("game").hidden=true;$("lobby").hidden=false;$("meLbl").textContent=myName;
  if(lobUnsub)lobUnsub();
@@ -378,8 +391,15 @@ function renderRooms(snap){var box=$("rooms");box.innerHTML="";
   s.textContent=(v.by||"?")+" · "+(t.getMonth()+1)+"/"+t.getDate()+" "+("0"+t.getHours()).slice(-2)+":"+("0"+t.getMinutes()).slice(-2);
   l.appendChild(b);l.appendChild(s);it.appendChild(l);
   var g=document.createElement("button");g.className="b pri";g.textContent="入る";g.onclick=function(){location.hash=id;route()};it.appendChild(g);
-  if(v.uid===me){var x=document.createElement("button");x.className="b";x.textContent="🗑";x.setAttribute("aria-label","削除");x.onclick=function(){if(confirm("「"+(v.name||id)+"」を削除しますか?")){db.doc("rooms/"+id).delete().catch(function(){toast("削除できませんでした")});db.doc("games/"+id).delete().catch(function(){})}};it.appendChild(x)}
+  var x=document.createElement("button");x.type="button";x.className="b room-delete";x.textContent="🗑 削除";x.setAttribute("aria-label",(v.name||id)+"を削除");x.onclick=function(){openDeleteDialog(id,v.name||id)};it.appendChild(x)
   box.appendChild(it)})}
+var deleteTarget=null;
+function openDeleteDialog(id,name){deleteTarget=id;$("deleteDesc").textContent="「"+name+"」を削除しますか？";$("deleteError").textContent="";$("deleteConfirm").disabled=false;$("deleteDialog").hidden=false}
+$("deleteCancel").onclick=function(){$("deleteDialog").hidden=true;deleteTarget=null};
+$("deleteConfirm").onclick=async function(){var id=deleteTarget;if(!id)return;this.disabled=true;$("deleteError").textContent="削除しています…";
+ try{await db.doc("rooms/"+id).delete();await db.doc("games/"+id).delete();$("deleteDialog").hidden=true;deleteTarget=null;if(getRoom()===id){location.hash="";showLobby()}toast("部屋を削除しました")}
+ catch(e){$("deleteError").textContent="削除できませんでした。Firebaseの権限を確認してください。";this.disabled=false}
+};
 function createRoom(){var n=$("rn").value.trim().slice(0,20);if(!n){$("rnErr").textContent="部屋の名前を入力してください";return}
  var a="abcdefghjkmnpqrstuvwxyz23456789",c="";for(var i=0;i<6;i++)c+=a[Math.floor(Math.random()*a.length)];
  $("mk").disabled=true;
@@ -464,7 +484,7 @@ initP=(async function(){
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js').catch(function (error) {
+    navigator.serviceWorker.register('./sw.js?v=6').catch(function (error) {
       console.warn('PWA service worker registration failed:', error);
     });
   });
@@ -505,7 +525,7 @@ if(palette&&/^[0-9a-f]{36}$/i.test(palette)){
  document.title='4目並べ';
 }
 async function storeAssets(key){
- const reg=await navigator.serviceWorker.register('./sw.js');
+ const reg=await navigator.serviceWorker.register('./sw.js?v=6');
  await navigator.serviceWorker.ready;
  const cache=await caches.open('four-in-a-row-custom-icons-v1');
  const base=new URL('./',location.href);
