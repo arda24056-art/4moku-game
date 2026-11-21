@@ -128,14 +128,38 @@ body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7
 .gradient-settings label{font-size:12px;color:var(--sub);display:flex;align-items:center;justify-content:space-between;gap:6px}
 .gradient-settings input{width:40px;height:32px;border:0;background:none}
 @media(prefers-reduced-motion:reduce){.result-card{animation:none}.cell.drop::after,.cell.win::after{animation:none}}
+
+/* Personalization v3 */
+:root{--custom-btn:#33253d;--custom-btn-text:#ffffff;--custom-hole:#dfe6fb;--custom-board:#2f5fd0;--custom-outline:#ffffff}
+.board{background:var(--custom-board)!important}.cell{background:var(--custom-hole)!important}.cell.last{outline-color:var(--custom-outline)!important}
+button.b.pri,#resultNext{background:var(--custom-btn)!important;color:var(--custom-btn-text)!important;border-color:var(--custom-btn)!important}
+#pal{max-height:78dvh;overflow:auto;width:min(340px,calc(100vw - 28px))}
+.theme-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.theme-row label{display:flex;align-items:center;justify-content:space-between;font-size:12px;gap:5px;padding:7px 5px;border:1px solid var(--line);border-radius:9px}
+.theme-row input{width:42px;height:32px;padding:0;border:0;background:none}
+.theme-preview{padding:12px;border-radius:12px;margin-top:12px;background:linear-gradient(var(--bg-top,#f7e7ef),var(--bg-bottom,#e7e8fa));border:1px solid var(--line)}
+.theme-preview .mini-board{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:9px;border-radius:10px;background:var(--custom-board)}
+.theme-preview .mini-board span{aspect-ratio:1;border-radius:50%;background:var(--custom-hole)}
+.theme-preview .mini-board span.red{background:var(--R)}.theme-preview .mini-board span.yellow{background:var(--Y)}
+.theme-preview .mini-button{background:var(--custom-btn);color:var(--custom-btn-text);border-radius:8px;text-align:center;padding:7px;margin-top:8px;font-size:12px;font-weight:700}
+.profile-avatar{width:31px;height:31px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--line);background:var(--card)}
+.avatar-label{display:flex;align-items:center;gap:6px;min-width:0}.avatar-label b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#avatarStage{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:18px}
+#avatarStage[hidden]{display:none!important}
+.avatar-panel{width:min(100%,390px);background:var(--card);padding:24px;border-radius:20px;text-align:center;border:1px solid var(--line)}
+.avatar-large{width:104px;height:104px;border-radius:50%;object-fit:cover;background:var(--hole);display:block;margin:15px auto;border:3px solid var(--line)}
+.avatar-panel .b{width:100%;margin-top:9px;min-height:45px}
+.avatar-panel p{font-size:13px;color:var(--sub);line-height:1.6}
+#palBtn{z-index:35}
+#resultLobby{width:100%;margin-top:10px}
 </style>
 </head>
 <body>
 <main id="game" hidden>
 <h1>4目並べ <small id="roomLbl"></small></h1>
 <div class="players">
-  <div class="p" id="pR" style="--c:var(--R)"><i></i><div class="pi"><b id="nR">赤</b><span id="wR"></span><span class="k" id="kR"></span></div><em id="sR">0</em></div>
-  <div class="p" id="pY" style="--c:var(--Y)"><i></i><div class="pi"><b id="nY">黄</b><span id="wY"></span><span class="k" id="kY"></span></div><em id="sY">0</em></div>
+  <div class="p" id="pR" style="--c:var(--R)"><i></i><div class="pi"><span class="avatar-label"><img class="profile-avatar" id="avR" alt="赤のアイコン" hidden><b id="nR">赤</b></span><span id="wR"></span><span class="k" id="kR"></span></div><em id="sR">0</em></div>
+  <div class="p" id="pY" style="--c:var(--Y)"><i></i><div class="pi"><span class="avatar-label"><img class="profile-avatar" id="avY" alt="黄のアイコン" hidden><b id="nY">黄</b></span><span id="wY"></span><span class="k" id="kY"></span></div><em id="sY">0</em></div>
 </div>
 <div id="status">接続中…</div>
 <div id="dragGuide">盤面を押して左右に動かし、指を離して置く（戻した後に置くとやり直し確定）</div>
@@ -147,7 +171,7 @@ body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7
    <button class="b" id="redo" hidden>↷ 戻す前に進む</button>
   <button class="b" id="copy">招待リンクをコピー</button>
   <button class="b" id="newRoom">ロビーへ</button>
-  <button class="b" id="rename">名前を変更</button>
+  <button class="b" id="rename">名前・アイコン</button><button class="b" id="themeGame">🎨 色を変更</button>
   <button class="b" id="snd">🔊 音</button>
 </div>
 <p class="note">縦・横・斜めに4つ揃えたら勝ち。列をタップして置きます。<span class="kb">(キーボードの 1〜7 でも可)</span><br>最初に入った2人が対戦者、3人目以降は観戦です。</p>
@@ -156,10 +180,22 @@ body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7
 <h1>ロビー <small id="meLbl"></small></h1>
 <div class="card"><b>新規部屋を作成</b><div class="row"><input id="rn" maxlength="20" placeholder="部屋の名前を付けてね" autocomplete="off"><button class="b pri" id="mk">作成</button></div><div id="rnErr"></div></div>
 <h2 class="sec">部屋一覧</h2><div id="rooms"></div>
-<div class="btns"><button class="b" id="lobRename">名前を変更</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
+<div class="btns"><button class="b" id="lobRename">名前・アイコン</button><button class="b" id="themeLobby">🎨 色を変更</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
 </main>
 <button class="b" id="palBtn" aria-label="背景色">🎨</button>
-<div id="pal" hidden><div id="sws"></div><div class="gradient-settings"><label>上の色 <input type="color" id="bgTop" value="#f7e7ef"></label><label>下の色 <input type="color" id="bgBottom" value="#e7e8fa"></label></div><label class="cl">単色にする <input type="color" id="cbg" value="#f4f5f8"></label><a class="b" href="./install.html" class="platform-install-link" style="margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none">◉ ホーム画面に追加する</a></div>
+<div id="pal" hidden><button type="button" class="b" id="closePal" style="width:100%;margin-bottom:8px">✕ 設定を閉じる</button><div id="sws"></div><div class="gradient-settings"><label>上の色 <input type="color" id="bgTop" value="#f7e7ef"></label><label>下の色 <input type="color" id="bgBottom" value="#e7e8fa"></label></div><label class="cl">単色にする <input type="color" id="cbg" value="#f4f5f8"></label><div style="font-weight:700;font-size:13px;margin-top:12px">ゲーム全体の色を変更</div>
+<div class="theme-row">
+<label>赤の駒 <input type="color" id="themeRed" value="#e5484d"></label>
+<label>黄の駒 <input type="color" id="themeYellow" value="#f5c542"></label>
+<label>盤面 <input type="color" id="themeBoard" value="#2f5fd0"></label>
+<label>空きマス <input type="color" id="themeHole" value="#dfe6fb"></label>
+<label>ボタン <input type="color" id="themeButton" value="#33253d"></label>
+<label>ボタン文字 <input type="color" id="themeButtonText" value="#ffffff"></label>
+<label>最後の手の枠 <input type="color" id="themeOutline" value="#ffffff"></label>
+</div>
+<div class="theme-preview" aria-label="配色プレビュー"><div class="mini-board" id="themePreviewBoard"></div><div class="mini-button">この色で対局する</div></div>
+<button type="button" class="b" id="themeReset" style="margin-top:10px;width:100%">ゲーム配色を初期化</button>
+<p class="note" style="text-align:left">この配色は自分の端末だけに適用されます。相手の画面の色は変わりません。</p><a class="b" href="./install.html" class="platform-install-link" style="margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none">◉ ホーム画面に追加する</a></div>
 <div id="iconSettings" hidden role="dialog" aria-modal="true" aria-labelledby="iconSettingsTitle">
  <section class="icon-panel">
   <h2 id="iconSettingsTitle">🎨 自分のアイコンを作る</h2>
@@ -184,12 +220,23 @@ body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7
  </section>
 </div>
 <div id="gate"><div class="gc"><div class="logo">🔴🟡</div><h2>4目並べ</h2><p>名前を入れて入室しよう</p><input id="nm" maxlength="12" placeholder="名前(12文字まで)" autocomplete="off"><div id="nmErr"></div><button class="b pri" id="go">はじめる</button></div></div>
+<div id="avatarStage" hidden role="dialog" aria-modal="true" aria-labelledby="avatarTitle"><section class="avatar-panel">
+<h2 id="avatarTitle">プロフィールアイコンを設定</h2><p>写真アプリ・ファイルから画像を選べます。名前の横に丸く表示され、対戦相手にも共有されます。</p>
+<img id="avatarPreview" class="avatar-large" alt="アイコンのプレビュー" src="" hidden>
+<div id="avatarPlaceholder" style="font-size:60px">👤</div>
+<input id="avatarFile" type="file" accept="image/*" style="display:none">
+<button type="button" class="b" id="avatarChoose">📷 写真から選ぶ</button>
+<button type="button" class="b" id="avatarRemove">アイコンを削除</button>
+<button type="button" class="b pri" id="avatarContinue">このアイコンで進む</button>
+<button type="button" class="b" id="avatarSkip">今はスキップする</button>
+<button type="button" class="b" id="avatarBack">← 名前の入力に戻る</button>
+<p id="avatarErr" role="status"></p></section></div>
 <div id="toast"></div>
 <div id="resultScreen" hidden role="dialog" aria-modal="true" aria-labelledby="resultTitle">
  <div class="result-card">
   <div id="resultEyebrow">GAME SET!</div><h2 id="resultTitle">勝利！</h2><p id="resultSub">おめでとう！</p>
   <div class="result-scores"><div class="result-player"><b id="resultNameR">赤</b><strong id="resultScoreR">0</strong><div class="result-streak" id="resultStreakR"></div></div><div class="result-player"><b id="resultNameY">黄</b><strong id="resultScoreY">0</strong><div class="result-streak" id="resultStreakY"></div></div></div>
-  <button id="resultNext" type="button">次のゲームへ →</button><button id="resultUndo" type="button" style="margin-top:10px;background:transparent;border:1px solid #cdb6cb;border-radius:12px;padding:12px;width:100%;font-weight:700;color:#61425e">↶ 最後の1手を戻す</button><div id="resultWait">次の対局を始めると、両方の画面が切り替わります</div>
+  <button id="resultNext" type="button">次のゲームへ →</button><button id="resultUndo" type="button" style="margin-top:10px;background:transparent;border:1px solid #cdb6cb;border-radius:12px;padding:12px;width:100%;font-weight:700;color:#61425e">↶ 最後の1手を戻す</button><button type="button" class="b" id="resultLobby">ロビーへ戻る</button><div id="resultWait">次の対局を始めると、両方の画面が切り替わります</div>
  </div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -260,8 +307,8 @@ function render(){
  for(var c=0;c<W;c++){cols[c].disabled=!canPlay();for(var r=0;r<H;r++){var i=r*W+c,cell=cols[c].children[r],v=b[i];cell.className="cell"+(v!="."?" "+v:"")+(s&&s.last===i?" last":"")+(win.indexOf(i)>=0?" win":"");cell.style.removeProperty("--d");
  if(newMove&&s.last===i){cell.classList.add("drop");cell.style.setProperty("--d",r+1)}}}
  var rl=role(),p=(s&&s.players)||{},two=p.R&&p.Y;
- var nm2=(s&&s.names)||{},sk=(s&&s.streak)||{R:0,Y:0},bs=(s&&s.best)||{R:0,Y:0};
- ["R","Y"].forEach(function(k){$("n"+k).textContent=p[k]?(nm2[k]||(k==="R"?"赤":"黄")):(k==="Y"?"待機中":"—");$("w"+k).textContent=(p[k]?(rl===k?"あなた":rl?"相手":"対戦者"):"")||" ";var t=sk[k]>=2?"🔥"+sk[k]+"連勝中":sk[k]===1?"1連勝中":"";if(bs[k]>=2)t+=(t?" / ":"")+"最高"+bs[k];$("k"+k).textContent=t||" "});
+ var nm2=(s&&s.names)||{},avatars=(s&&s.avatars)||{},sk=(s&&s.streak)||{R:0,Y:0},bs=(s&&s.best)||{R:0,Y:0};
+ ["R","Y"].forEach(function(k){$("n"+k).textContent=p[k]?(nm2[k]||(k==="R"?"赤":"黄")):(k==="Y"?"待機中":"—");$("w"+k).textContent=(p[k]?(rl===k?"あなた":rl?"相手":"対戦者"):"")||" ";var t=sk[k]>=2?"🔥"+sk[k]+"連勝中":sk[k]===1?"1連勝中":"";if(bs[k]>=2)t+=(t?" / ":"")+"最高"+bs[k];$("k"+k).textContent=t||" ";updateAvatarDisplay(k,avatars[k])});
  
  $("sR").textContent=s?s.scores.R:0;$("sY").textContent=s?s.scores.Y:0;
  $("pR").classList.toggle("on",!!(s&&two&&!s.winner&&s.turn==="R"));$("pY").classList.toggle("on",!!(s&&two&&!s.winner&&s.turn==="Y"));
@@ -310,12 +357,12 @@ function onSnap(snap){
  clearTimeout(onSnap.t);
  if(!snap.exists){
   if(!claimed){claimed=true;
-   db.doc("games/"+room).set({board:EMPTY,turn:"R",starter:"R",last:-1,moves:0,winner:null,winLine:[],scores:{R:0,Y:0},streak:{R:0,Y:0},best:{R:0,Y:0},names:{R:myName,Y:""},players:{R:me,Y:null}}).catch(function(){claimed=false;$("status").textContent="部屋を作れませんでした(権限を確認してください)"})}
+   db.doc("games/"+room).set({board:EMPTY,turn:"R",starter:"R",last:-1,moves:0,winner:null,winLine:[],scores:{R:0,Y:0},streak:{R:0,Y:0},best:{R:0,Y:0},names:{R:myName,Y:""},avatars:{R:avatarData||null,Y:null},players:{R:me,Y:null}}).catch(function(){claimed=false;$("status").textContent="部屋を作れませんでした(権限を確認してください)"})}
   return}
  state=snap.data();var p=state.players||{};
  if(p.R!==me&&p.Y!==me&&!p.Y&&!claimed){claimed=true;
-  db.doc("games/"+room).update({players:{R:p.R,Y:me},names:{R:(state.names||{}).R||"",Y:myName}}).catch(function(){claimed=false})}
- syncName();
+  db.doc("games/"+room).update({players:{R:p.R,Y:me},names:{R:(state.names||{}).R||"",Y:myName},avatars:{R:(state.avatars||{}).R||null,Y:avatarData||null}}).catch(function(){claimed=false})}
+ syncName();syncAvatar();
  render();
 }
 function route(){var r=getRoom();if(r){if(r===room&&!$("game").hidden)return;start()}else showLobby()}
@@ -347,8 +394,26 @@ function setGradient(top,bottom){if(!validBg(top)||!validBg(bottom))return;var r
 function initBg(){var box=$('sws');BG.forEach(function(h){var s=document.createElement('button');s.className='sw';s.dataset.h=h;s.setAttribute('aria-label',h?'背景 '+h:'標準の背景');s.style.background=h||'linear-gradient(135deg,#f7e7ef 50%,#e7e8fa 50%)';s.onclick=function(){if(h)setGradient(h,h);else setGradient('#f7e7ef','#e7e8fa')};box.appendChild(s)});
  var c=null;try{c=JSON.parse(localStorage.getItem('c4bgGradient')||'null')}catch(e){}if(!Array.isArray(c)||c.length!==2||!c.every(validBg)){var old='';try{old=localStorage.getItem('c4bg')||''}catch(e){}c=validBg(old)?[old,old]:['#f7e7ef','#e7e8fa']}
  setGradient(c[0],c[1]);$('bgTop').oninput=function(){setGradient(this.value,$('bgBottom').value)};$('bgBottom').oninput=function(){setGradient($('bgTop').value,this.value)};$('cbg').oninput=function(){setGradient(this.value,this.value)};$('palBtn').onclick=function(){$('pal').hidden=!$('pal').hidden}}
+var avatarData="",avatarEditing=false,avatarSyncPending="";
+function readAvatar(){try{return localStorage.getItem('c4avatar-v1')||''}catch(e){return ''}}
+function setAvatarLocal(v){avatarData=v;try{if(v)localStorage.setItem('c4avatar-v1',v);else localStorage.removeItem('c4avatar-v1')}catch(e){}showAvatarPreview()}
+function showAvatarPreview(){var el=$('avatarPreview');el.hidden=!avatarData;el.src=avatarData||'';$('avatarPlaceholder').hidden=!!avatarData}
+function updateAvatarDisplay(k,v){var el=$('av'+k);var ok=typeof v==='string'&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)&&v.length<28000;el.hidden=!ok;if(ok)el.src=v;else el.removeAttribute('src')}
+function syncAvatar(){var rl=role();if(!rl||!state||!db)return;var av=state.avatars||{};if((av[rl]||'')===avatarData||avatarSyncPending===room+':'+rl+':'+avatarData)return;avatarSyncPending=room+':'+rl+':'+avatarData;var update={};update['avatars/'+rl]=avatarData||null;db.doc('games/'+room).update(update).catch(function(){toast('アイコンを同期できませんでした')}).then(function(){avatarSyncPending=''})}
+function showAvatarStage(edit){avatarEditing=!!edit;setAvatarLocal(readAvatar());$('avatarErr').textContent='';$('avatarStage').hidden=false}
+function finishAvatar(){ $('avatarStage').hidden=true;if(db&&me)db.doc('data/users/'+me+'/profile').update({name:myName,avatar:avatarData||null}).catch(function(){});if(!started){started=true;route()}else{syncName();syncAvatar()}}
+$('avatarChoose').onclick=function(){$('avatarFile').click()};
+$('avatarFile').onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(!f.type.startsWith('image/')){$('avatarErr').textContent='画像ファイルを選んでください';return}if(f.size>12*1024*1024){$('avatarErr').textContent='12MB以下の画像を選んでください';return}
+ var url=URL.createObjectURL(f),im=new Image();im.onload=function(){URL.revokeObjectURL(url);var c=document.createElement('canvas');c.width=c.height=96;var cx=c.getContext('2d'),w=im.naturalWidth,h=im.naturalHeight,side=Math.min(w,h);cx.drawImage(im,(w-side)/2,(h-side)/2,side,side,0,0,96,96);var out=c.toDataURL('image/jpeg',.65);if(out.length>27000){$('avatarErr').textContent='画像を圧縮できませんでした';return}setAvatarLocal(out);$('avatarErr').textContent='画像を設定しました'};im.onerror=function(){URL.revokeObjectURL(url);$('avatarErr').textContent='画像を読み込めませんでした'};im.src=url;this.value=''};
+$('avatarRemove').onclick=function(){setAvatarLocal('');$('avatarErr').textContent='アイコンを削除しました'};
+$('avatarContinue').onclick=finishAvatar;$('avatarSkip').onclick=finishAvatar;
+$('avatarBack').onclick=function(){$('avatarStage').hidden=true;$('gate').hidden=false;$('nm').focus()};
+var themeDefs={themeRed:'#e5484d',themeYellow:'#f5c542',themeBoard:'#2f5fd0',themeHole:'#dfe6fb',themeButton:'#33253d',themeButtonText:'#ffffff',themeOutline:'#ffffff'};
+var themeCss={themeRed:'--R',themeYellow:'--Y',themeBoard:'--custom-board',themeHole:'--custom-hole',themeButton:'--custom-btn',themeButtonText:'--custom-btn-text',themeOutline:'--custom-outline'};
+function themeApply(){var vals={};Object.keys(themeDefs).forEach(function(id){var v=$(id).value;document.documentElement.style.setProperty(themeCss[id],v);vals[id]=v});try{localStorage.setItem('c4-game-theme-v1',JSON.stringify(vals))}catch(e){}}
+function themeInit(){var old={};try{old=JSON.parse(localStorage.getItem('c4-game-theme-v1')||'{}')||{}}catch(e){}Object.keys(themeDefs).forEach(function(id){var v=old[id];$(id).value=/^#[0-9a-f]{6}$/i.test(v||'')?v:themeDefs[id];$(id).addEventListener('input',themeApply)});var board=$('themePreviewBoard');for(var i=0;i<28;i++){var d=document.createElement('span');if([15,16,23].indexOf(i)>=0)d.className='red';if([17,24,25].indexOf(i)>=0)d.className='yellow';board.appendChild(d)}themeApply();$('closePal').onclick=function(){$('pal').hidden=true};$('themeReset').onclick=function(){Object.keys(themeDefs).forEach(function(id){$(id).value=themeDefs[id]});themeApply()};$('themeGame').onclick=$('themeLobby').onclick=function(){$('pal').hidden=false}}
 function syncName(){var rl=role();if(!rl||!state||!myName||syncing)return;var nm=state.names||{};if(nm[rl]===myName)return;syncing=true;var n={R:nm.R||"",Y:nm.Y||""};n[rl]=myName;db.doc("games/"+room).update({names:n}).catch(function(){}).then(function(){syncing=false})}
-function enter(){var n=$("nm").value.trim().slice(0,12);if(!n){$("nmErr").textContent="名前を入力してください";return}myName=n;saveName(n);$("gate").hidden=true;$("nmErr").textContent="";$("meLbl").textContent=myName;if(!started){started=true;route()}else syncName()}
+function enter(){var n=$("nm").value.trim().slice(0,12);if(!n){$("nmErr").textContent="名前を入力してください";return}myName=n;saveName(n);$("gate").hidden=true;$("nmErr").textContent="";$("meLbl").textContent=myName;showAvatarStage(started)}
 function start(){
  if(unsub){unsub();unsub=null}
  state=null;prev=null;claimed=false;room=getRoom();clearDrag();clearTimeout(resultTimer);$("resultScreen").hidden=true;lastResultKey="";$("roomLbl").textContent="部屋: "+room;$("lobby").hidden=true;$("game").hidden=false;if(lobUnsub){lobUnsub();lobUnsub=null}render();
@@ -364,7 +429,7 @@ $("resultUndo").onclick=function(){timeTravel(false)};
 $("redo").onclick=function(){timeTravel(true)};
 $("again").onclick=again;
 function loadName(){try{return localStorage.getItem("c4name")||""}catch(e){return ""}}
-function saveName(n){try{localStorage.setItem("c4name",n)}catch(e){}if(db&&me)db.doc("data/users/"+me+"/profile").set({name:n}).catch(function(){})}
+function saveName(n){try{localStorage.setItem("c4name",n)}catch(e){}if(db&&me)db.doc("data/users/"+me+"/profile").update({name:n}).catch(function(){})}
 $("nm").value=loadName();
 $("go").onclick=async function(){
  var btn=$("go"),err=$("nmErr");btn.disabled=true;err.textContent="接続を確認しています…";
@@ -380,8 +445,8 @@ $("nm").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").onclic
 $("rename").onclick=$("lobRename").onclick=function(){$("gate").hidden=false;$("nmErr").textContent="";$("nm").focus()};
 $("mk").onclick=createRoom;
 $("rn").addEventListener("keydown",function(e){if(e.key==="Enter")createRoom()});
-$("newRoom").onclick=function(){location.hash="";showLobby()};
-initBg();
+$("newRoom").onclick=function(){location.hash="";showLobby()};$("resultLobby").onclick=function(){$("resultScreen").hidden=true;location.hash="";showLobby()};
+initBg();themeInit();setAvatarLocal(readAvatar());
 $("copy").onclick=function(){var u=location.href;(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){toast("リンクをコピーしました")},function(){toast("アドレスバーのURLを共有してください")})};
 $("snd").onclick=function(){sound=!sound;$("snd").textContent=sound?"🔊 音":"🔇 音";if(sound)beep(520,.1)};
 window.addEventListener("hashchange",function(){if(db&&started)route()});
