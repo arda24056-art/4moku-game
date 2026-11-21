@@ -282,7 +282,7 @@ button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
  <div class="result-card">
   <div id="resultEyebrow">GAME SET!</div><h2 id="resultTitle">勝利！</h2><p id="resultSub">おめでとう！</p>
   <div class="result-scores"><div class="result-player"><b id="resultNameR">赤</b><strong id="resultScoreR">0</strong><div class="result-streak" id="resultStreakR"></div></div><div class="result-player"><b id="resultNameY">黄</b><strong id="resultScoreY">0</strong><div class="result-streak" id="resultStreakY"></div></div></div>
-  <button id="resultNext" type="button">次のゲームへ →</button><button id="resultUndo" type="button" style="margin-top:10px;background:transparent;border:1px solid #cdb6cb;border-radius:12px;padding:12px;width:100%;font-weight:700;color:#61425e">↶ 最後の1手を戻す</button><button type="button" class="b" id="resultLobby">ロビーへ戻る</button><div id="resultWait">次の対局を始めると、両方の画面が切り替わります</div>
+  <button id="resultNext" type="button">次のゲームへ →</button><button type="button" class="b" id="resultLobby">ロビーへ戻る</button><div id="resultWait">次の対局を始めると、両方の画面が切り替わります</div>
  </div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -383,7 +383,7 @@ function showResult(s){var modal=$('resultScreen');if(!s||!s.winner){modal.hidde
  $('resultEyebrow').textContent=draw?'DRAW GAME':'GAME SET!';$('resultTitle').textContent=draw?'引き分け！':(names[winner]||(winner==='R'?'赤':'黄'))+' の勝利！';
  $('resultSub').textContent=draw?'いい勝負！ 次の対局へ':(rl===winner?'🎉 おめでとう！ 勝利！':rl?'🎉 決着！ 次はリベンジ！':'🎉 勝負あり！');
  ['R','Y'].forEach(function(k){$('resultName'+k).textContent=names[k]||(k==='R'?'赤':'黄');$('resultScore'+k).textContent=(s.scores||{})[k]||0;$('resultStreak'+k).textContent=(!draw&&winner===k&&sk[k]>=2)?'🔥 '+sk[k]+'連勝中':''});
- $('resultUndo').hidden=!(rl&&s.history&&!s.history.undone);$('resultNext').disabled=!rl;$('resultNext').textContent=rl?'次のゲームへ →':'対戦者が次のゲームを開始します';$('resultWait').textContent=rl?'どちらかが押すと、2人とも次の対局へ進みます':'次の対局が始まるまでお待ちください';modal.hidden=false;
+ $('resultNext').disabled=!rl;$('resultNext').textContent=rl?'次のゲームへ →':'対戦者が次のゲームを開始します';$('resultWait').textContent=rl?'どちらかが押すと、2人とも次の対局へ進みます':'次の対局が始まるまでお待ちください';modal.hidden=false;
 }
 function scheduleResult(s,wasWinner){if(!s||!s.winner){clearTimeout(resultTimer);$('resultScreen').hidden=true;lastResultKey='';return}
  var key=room+':'+(s.scores?s.scores.R+','+s.scores.Y:'')+':'+s.winner+':'+s.moves;
@@ -580,7 +580,7 @@ function start(){
 buildBoard();initDrag();render();
 $("resultNext").onclick=again;
 $("undo").onclick=function(){timeTravel(false)};
-$("resultUndo").onclick=function(){timeTravel(false)};
+
 $("redo").onclick=function(){timeTravel(true)};
 
 function loadName(){try{return localStorage.getItem("c4name")||""}catch(e){return ""}}
@@ -616,6 +616,45 @@ initP=(async function(){
 })();
 })();
 </script>
+<style id="recentColorsCss">
+.recent-colors{margin:12px 0;padding:11px 12px;border:1px solid #d7c5d1;border-radius:12px;background:#fff8fc;color:#4c3446}
+.recent-colors-title{font-size:12px;font-weight:700;margin-bottom:8px}
+.recent-colors-row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+.recent-colors button{width:35px;height:35px;min-width:35px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #b8a8b5;cursor:pointer;padding:0}
+.recent-colors button:focus-visible{outline:3px solid #4230ae;outline-offset:2px}
+.recent-colors-hint{font-size:11px;color:#775f70;margin-top:7px}
+</style>
+<script id="recentColorsScript">
+(function(){
+ 'use strict';
+ var KEY='4moku-recent-colors-v1',current=null,history=[];
+ try{var v=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(v))history=v.filter(function(x){return /^#[0-9a-f]{6}$/i.test(x)}).slice(0,5)}catch(e){}
+ var inputs=Array.from(document.querySelectorAll('input[type="color"]'));
+ var panels=['pal','iconSettings'].map(function(id){return document.getElementById(id)}).filter(Boolean);
+ function build(panel){
+  var div=document.createElement('section');div.className='recent-colors';
+  div.innerHTML='<div class="recent-colors-title">最近使った色（最大5色）</div><div class="recent-colors-row"></div><div class="recent-colors-hint">変更したい色を選んでから、ここをタップすると同じ色を使えます。</div>';
+  if(panel.id==='pal'){var target=panel.querySelector('.theme-preview');if(target)panel.insertBefore(div,target);else panel.appendChild(div)}
+  else{var target=panel.querySelector('.icon-actions');if(target)panel.insertBefore(div,target);else panel.appendChild(div)}
+  return div;
+ }
+ var sections=panels.map(build);
+ function paint(){sections.forEach(function(sec){var row=sec.querySelector('.recent-colors-row');row.textContent='';history.forEach(function(color){var b=document.createElement('button');b.type='button';b.style.backgroundColor=color;b.title=color+' を適用';b.setAttribute('aria-label',color+'を選択中の項目に適用');b.onclick=function(){
+   var target=current;
+   if(!target||!sec.parentNode.contains(target)){target=sec.parentNode.querySelector('input[type="color"]')}
+   if(!target)return;
+   target.value=color;target.dispatchEvent(new Event('input',{bubbles:true}));target.dispatchEvent(new Event('change',{bubbles:true}));
+   current=target;
+  };row.appendChild(b)})})}
+ function remember(value){if(!/^#[0-9a-f]{6}$/i.test(value))return;value=value.toLowerCase();history=[value].concat(history.filter(function(x){return x.toLowerCase()!==value})).slice(0,5);try{localStorage.setItem(KEY,JSON.stringify(history))}catch(e){}paint()}
+ inputs.forEach(function(input){
+  input.addEventListener('focus',function(){current=input});
+  input.addEventListener('pointerdown',function(){current=input});
+  input.addEventListener('change',function(){current=input;remember(input.value)});
+ });
+ paint();
+})();
+</script>
 <script>
 if ('serviceWorker' in navigator) {
   (function(){
@@ -629,7 +668,7 @@ if ('serviceWorker' in navigator) {
     });
     function checkUpdate(){navigator.serviceWorker.getRegistration().then(function(reg){if(reg)reg.update().catch(function(){})}).catch(function(){})}
     window.addEventListener('load',function(){
-      navigator.serviceWorker.register('./sw.js?v=7',{updateViaCache:'none'}).then(function(reg){
+      navigator.serviceWorker.register('./sw.js?v=9',{updateViaCache:'none'}).then(function(reg){
         // Check every time the installed app is opened, plus when foregrounded.
         reg.update().catch(function(){});
       }).catch(function(error){console.warn('PWA service worker registration failed:',error)});
@@ -674,7 +713,7 @@ if(palette&&/^[0-9a-f]{36}$/i.test(palette)){
  document.title='4目並べ';
 }
 async function storeAssets(key){
- const reg=await navigator.serviceWorker.register('./sw.js?v=7');
+ const reg=await navigator.serviceWorker.register('./sw.js?v=9');
  await navigator.serviceWorker.ready;
  const cache=await caches.open('four-in-a-row-custom-icons-v1');
  const base=new URL('./',location.href);
