@@ -123,10 +123,10 @@ main{padding-bottom:88px!important}
 <h1>ロビー <small id="meLbl"></small></h1>
 <div class="card"><b>新規部屋を作成</b><div class="row"><input id="rn" maxlength="20" placeholder="部屋の名前を付けてね" autocomplete="off"><button class="b pri" id="mk">作成</button></div><div id="rnErr"></div></div>
 <h2 class="sec">部屋一覧</h2><div id="rooms"></div>
-<div class="btns"><button class="b" id="lobRename">名前を変更</button><a class="b" href="./install.html" style="text-decoration:none;display:inline-block">📱 ホーム画面アイコンを作る</a></div>
+<div class="btns"><button class="b" id="lobRename">名前を変更</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
 </main>
 <button class="b" id="palBtn" aria-label="背景色">🎨</button>
-<div id="pal" hidden><div id="sws"></div><label class="cl">自由に選ぶ <input type="color" id="cbg" value="#f4f5f8"></label><a class="b" href="./install.html" style="margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none">◉ ホーム画面アイコンを選ぶ</a></div>
+<div id="pal" hidden><div id="sws"></div><label class="cl">自由に選ぶ <input type="color" id="cbg" value="#f4f5f8"></label><a class="b" href="./install.html" class="platform-install-link" style="margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none">◉ ホーム画面に追加する</a></div>
 <div id="iconSettings" hidden role="dialog" aria-modal="true" aria-labelledby="iconSettingsTitle">
  <section class="icon-panel">
   <h2 id="iconSettingsTitle">🎨 自分のアイコンを作る</h2>
@@ -359,7 +359,7 @@ const query=new URLSearchParams(location.search),palette=query.get('icon');
 if(palette&&/^[0-9a-f]{30}$/i.test(palette)){
  const cs=palette.match(/.{6}/g).map(s=>'#'+s);cs.forEach((v,i)=>fields[i].value=v);
  // Install pages use their own per-palette manifest; the SW generates the assets.
- const link=document.querySelector('link[rel="manifest"]');if(link)link.href='./personal-manifest/'+palette+'.webmanifest';
+ const link=document.querySelector('link[rel="manifest"]');if(link && !(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)))link.href='./personal-manifest/'+palette+'.webmanifest';
  document.title='4目並べ';
 }
 async function storeAssets(key){
@@ -392,6 +392,12 @@ document.getElementById('personalInstall').addEventListener('click',async()=>{
    const link=document.getElementById('personalUrl');if(link)link.value=url;
  }catch(e){instructions.textContent='インストール準備ができませんでした。まずGitHub PagesのHTTPSで開き直してください。詳細：'+e.message;}
 });
+const iosDevice=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1);
+if(iosDevice){
+ document.querySelectorAll('.platform-install-link').forEach(a=>a.href='./ios-install.html');
+ const personal=document.getElementById('personalInstall');if(personal)personal.hidden=true;
+ const hint=document.querySelector('#iconSettings .icon-hint:last-child');if(hint)hint.textContent='iPhoneでは標準のピンクアイコンでホーム画面に追加します。Safariでゲーム本体を開いて共有 → ホーム画面に追加を選んでください。';
+}
 const target=document.getElementById('personalInstall');
 if(palette&&/^[0-9a-f]{30}$/i.test(palette)){
  target.textContent='この色でホーム画面に追加する';
