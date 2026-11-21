@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>4目並べ</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<meta name="theme-color" content="#2f5fd0">
+<link rel="manifest" href="./manifest.webmanifest?v=pink20261122">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png?v=pink20261122">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png?v=pink20261122">
+<meta name="theme-color" content="#f5dce6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="4目並べ">
@@ -132,11 +132,11 @@ main{padding-bottom:88px!important}
   <h2 id="iconSettingsTitle">🎨 自分のアイコンを作る</h2>
   <canvas id="iconPreview" class="icon-preview" width="512" height="512" aria-label="アイコンのプレビュー"></canvas>
   <div class="icon-colors">
-   <label>左上 <input type="color" id="iconC0" value="#e5484d"></label>
-   <label>右上 <input type="color" id="iconC1" value="#f5c542"></label>
-   <label>左下 <input type="color" id="iconC2" value="#f5c542"></label>
-   <label>右下 <input type="color" id="iconC3" value="#e5484d"></label>
-   <label>背景 <input type="color" id="iconBg" value="#152c68"></label>
+   <label>左上 <input type="color" id="iconC0" value="#e66589"></label>
+   <label>右上 <input type="color" id="iconC1" value="#f5d7d8"></label>
+   <label>左下 <input type="color" id="iconC2" value="#f5d7d8"></label>
+   <label>右下 <input type="color" id="iconC3" value="#e66589"></label>
+   <label>背景 <input type="color" id="iconBg" value="#f5dce6"></label>
   </div>
   <div class="icon-actions">
    <button type="button" class="b" id="iconReset">初期色</button>
@@ -331,7 +331,7 @@ if ('serviceWorker' in navigator) {
 <script>
 (function(){
 'use strict';
-const defaults=['#e5484d','#f5c542','#f5c542','#e5484d','#152c68'];
+const defaults=['#e66589','#f5d7d8','#f2b9d1','#d488a4','#f5dce6'];
 const fields=['iconC0','iconC1','iconC2','iconC3','iconBg'].map(id=>document.getElementById(id));
 const canvas=document.getElementById('iconPreview'),ctx=canvas.getContext('2d');
 const modal=document.getElementById('iconSettings');
@@ -342,11 +342,12 @@ function paint(context,size){
  const colors=fields.map(f=>f.value),s=size/512;
  context.clearRect(0,0,size,size);
  context.fillStyle=colors[4];context.fillRect(0,0,size,size);
- [[164,164],[348,164],[164,348],[348,348]].forEach(([x,y],i)=>{context.beginPath();context.arc(x*s,y*s,76*s,0,Math.PI*2);context.fillStyle=colors[i];context.fill()});
+  context.fillStyle="#fff0f5";context.beginPath();context.roundRect(56*s,56*s,400*s,400*s,80*s);context.fill();
+  [[172,172],[340,172],[172,340],[340,340]].forEach(([x,y],i)=>{context.beginPath();context.arc(x*s,y*s,72*s,0,Math.PI*2);context.fillStyle=colors[i];context.fill()});
 }
 function draw(){paint(ctx,512);try{localStorage.setItem('c4-personal-icon-v1',JSON.stringify(fields.map(f=>f.value)))}catch(e){}}
 fields.forEach(f=>f.addEventListener('input',draw));
-document.getElementById('openIconSettings').addEventListener('click',()=>{document.getElementById('pal').hidden=true;modal.hidden=false;draw()});
+const openButton=document.getElementById('openIconSettings');if(openButton)openButton.addEventListener('click',()=>{document.getElementById('pal').hidden=true;modal.hidden=false;draw()});
 document.getElementById('iconClose').addEventListener('click',()=>modal.hidden=true);
 document.getElementById('iconReset').addEventListener('click',()=>{fields.forEach((f,i)=>f.value=defaults[i]);draw()});
 function png(size){const c=document.createElement('canvas');c.width=c.height=size;paint(c.getContext('2d'),size);return c.toDataURL('image/png')}

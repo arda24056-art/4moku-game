@@ -1,4 +1,4 @@
-const SHELL='4moku-shell-install-v1', CUSTOM='4moku-palette-assets-v1';
+const SHELL='4moku-shell-pink-v2', CUSTOM='4moku-palette-assets-v1';
 const ASSETS=['./','./index.html','./install.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(SHELL).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('4moku-')&&k!==SHELL&&k!==CUSTOM).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
