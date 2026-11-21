@@ -103,7 +103,7 @@ main{padding-bottom:88px!important}
 /* Gameplay update: touch drag, result presentation, two-color background */
 body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7e8fa)) fixed;min-height:100dvh}
 .board{position:relative;touch-action:none;overflow:visible;user-select:none;-webkit-user-select:none}
-.col{touch-action:none}
+.col{touch-action:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 .cell.g::after{opacity:.56;outline:2px dashed rgba(255,255,255,.9);outline-offset:-2px}
 .col.drag-target{background:rgba(255,255,255,.19);outline:2px solid rgba(255,255,255,.7);outline-offset:1px}
 #dragDisc{position:fixed;z-index:45;width:46px;height:46px;border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%);border:3px solid rgba(255,255,255,.85);box-shadow:0 9px 18px #0005,inset 0 4px 6px #fff5}
@@ -181,6 +181,11 @@ button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
 .avatar-label{gap:7px}
 #game .pi{min-width:0}
 @media(max-width:480px){.avatar-ring{width:31px;height:31px;border-width:3px}.avatar-fallback{font-size:16px}#game .p{padding:8px 6px}#game .p em{font-size:19px}#game .p b{font-size:12px}}
+/* v6: vertically center the entire match area, preserving safe-area and the floating palette button. */
+#game:not([hidden]){display:flex;flex-direction:column;justify-content:center;min-height:100vh;min-height:100dvh;padding-top:calc(18px + env(safe-area-inset-top,0px))!important;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))!important}
+#game .board{flex:none;overscroll-behavior:none;-webkit-touch-callout:none}
+#game .col,#game .cell{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+@media(max-height:620px){#game:not([hidden]){justify-content:flex-start}}
 </style>
 </head>
 <body>
@@ -308,10 +313,55 @@ function dragPreview(c,x,y){var d=$('dragDisc');dragCol=c;d.style.left=x+'px';d.
  var cols=$('board').children;for(var j=0;j<W;j++){cols[j].classList.toggle('drag-target',j===c&&c>=0&&lowRow(state.board,j)>=0);for(var r=0;r<H;r++){var cell=cols[j].children[r];cell.classList.remove('g');cell.style.removeProperty('--gc')}}
  if(c>=0&&lowRow(state.board,c)>=0){var cell=cols[c].children[lowRow(state.board,c)];cell.classList.add('g');cell.style.setProperty('--gc',role()==='R'?'var(--R)':'var(--Y)');void 0}else void 0;}
 function clearDrag(){dragging=false;dragPointer=null;dragCol=-1;$('dragDisc').style.display='none';var cols=$('board').children;for(var c=0;c<W;c++){cols[c].classList.remove('drag-target');for(var r=0;r<H;r++){cols[c].children[r].classList.remove('g');cols[c].children[r].style.removeProperty('--gc')}}}
-function initDrag(){var board=$('board');board.addEventListener('pointerdown',function(e){if(!canPlay()||busy||e.button!==0)return;dragging=true;dragPointer=e.pointerId;try{board.setPointerCapture(e.pointerId)}catch(_){}dragPreview(dragColumnAt(e.clientX),e.clientX,e.clientY);e.preventDefault()});
- board.addEventListener('pointermove',function(e){if(!dragging||e.pointerId!==dragPointer)return;dragPreview(dragColumnAt(e.clientX),e.clientX,e.clientY);e.preventDefault()});
- board.addEventListener('pointerup',function(e){if(!dragging||e.pointerId!==dragPointer)return;var c=dragColumnAt(e.clientX);ignoreClickUntil=Date.now()+450;clearDrag();if(c>=0)play(c);e.preventDefault()});
- board.addEventListener('pointercancel',clearDrag);window.addEventListener('blur',function(){if(dragging)clearDrag()})}
+function initDrag(){
+ var board=$('board');
+ // iOS Safari can cancel pointer streams during scrolling/long-press.
+ // Use a dedicated touch stream on touch devices and pointer events elsewhere.
+ var touchActive=false,touchId=null;
+ function touchPoint(e){for(var i=0;i<e.changedTouches.length;i++)if(e.changedTouches[i].identifier===touchId)return e.changedTouches[i];return null}
+ board.addEventListener('touchstart',function(e){
+  if(!canPlay()||busy||touchActive||!e.changedTouches.length)return;
+  var t=e.changedTouches[0];touchActive=true;touchId=t.identifier;
+  dragging=true;dragPointer='touch';
+  dragPreview(dragColumnAt(t.clientX),t.clientX,t.clientY);
+  e.preventDefault();
+ },{passive:false});
+ board.addEventListener('touchmove',function(e){
+  if(!touchActive)return;var t=touchPoint(e);if(!t)return;
+  dragPreview(dragColumnAt(t.clientX),t.clientX,t.clientY);
+  e.preventDefault();
+ },{passive:false});
+ board.addEventListener('touchend',function(e){
+  if(!touchActive)return;var t=touchPoint(e);if(!t)return;
+  var c=dragColumnAt(t.clientX);touchActive=false;touchId=null;
+  ignoreClickUntil=Date.now()+650;clearDrag();
+  if(c>=0)play(c);
+  e.preventDefault();
+ },{passive:false});
+ board.addEventListener('touchcancel',function(e){
+  if(!touchActive)return;touchActive=false;touchId=null;
+  ignoreClickUntil=Date.now()+650;clearDrag();
+ },{passive:false});
+ board.addEventListener('pointerdown',function(e){
+  if(e.pointerType==='touch'||touchActive||!canPlay()||busy||(e.button!==0&&e.pointerType==='mouse'))return;
+  dragging=true;dragPointer=e.pointerId;
+  try{e.target.setPointerCapture(e.pointerId)}catch(_){}
+  dragPreview(dragColumnAt(e.clientX),e.clientX,e.clientY);e.preventDefault();
+ });
+ board.addEventListener('pointermove',function(e){
+  if(e.pointerType==='touch'||!dragging||e.pointerId!==dragPointer)return;
+  dragPreview(dragColumnAt(e.clientX),e.clientX,e.clientY);e.preventDefault();
+ });
+ board.addEventListener('pointerup',function(e){
+  if(e.pointerType==='touch'||!dragging||e.pointerId!==dragPointer)return;
+  var c=dragColumnAt(e.clientX);ignoreClickUntil=Date.now()+450;
+  clearDrag();if(c>=0)play(c);e.preventDefault();
+ });
+ board.addEventListener('pointercancel',function(e){if(e.pointerType!=='touch'&&!touchActive&&dragging)clearDrag()});
+ board.addEventListener('contextmenu',function(e){if(dragging||canPlay())e.preventDefault()});
+ window.addEventListener('blur',function(){if(dragging){touchActive=false;touchId=null;clearDrag()}});
+}
+
 function showResult(s){var modal=$('resultScreen');if(!s||!s.winner){modal.hidden=true;return}
  var names=s.names||{},sk=s.streak||{},p=s.players||{};var winner=s.winner,draw=winner==='D',rl=role();
  $('resultEyebrow').textContent=draw?'DRAW GAME':'GAME SET!';$('resultTitle').textContent=draw?'引き分け！':(names[winner]||(winner==='R'?'赤':'黄'))+' の勝利！';
