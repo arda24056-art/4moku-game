@@ -136,17 +136,18 @@ main{padding-bottom:88px!important}
    <label>右上 <input type="color" id="iconC1" value="#f5d7d8"></label>
    <label>左下 <input type="color" id="iconC2" value="#f5d7d8"></label>
    <label>右下 <input type="color" id="iconC3" value="#e66589"></label>
-   <label>背景 <input type="color" id="iconBg" value="#f5dce6"></label>
+   <label>外側の背景 <input type="color" id="iconBg" value="#f5dce6"></label>
+   <label>内側の背景 <input type="color" id="iconInner" value="#fff0f5"></label>
   </div>
   <div class="icon-actions">
    <button type="button" class="b" id="iconReset">初期色</button>
    <button type="button" class="b pri" id="iconSave">PNGを保存</button>
    <button type="button" class="b" id="iconClose">閉じる</button>
   </div>
-  <p class="icon-hint">5色すべて自由に変更できます。設定はこの端末に保存されます。</p>
+  <p class="icon-hint">6色すべて自由に変更できます。設定はこの端末に保存されます。</p>
   <button type="button" class="b pri" id="personalInstall" style="width:100%;margin-top:12px">この配色でホーム画面に追加する</button>
   <input id="personalUrl" readonly aria-label="カスタムアイコン用URL" placeholder="ここに専用URLが表示されます" style="width:100%;margin-top:8px" onclick="this.select()"><div id="personalInstructions" class="icon-hint" style="white-space:pre-line;margin-top:12px" aria-live="polite"></div>
-  <p class="icon-hint">Android：Chromeで専用インストール画面から追加。iPhone：生成したPNGを「ショートカット」アプリのホーム画面アイコンに指定する方法が確実です。iOSの通常のPWAアイコンを任意画像へ確実に差し替えるAPIはありません。</p>
+  <p class="icon-hint">Android：Chromeで専用インストール画面から追加。iPhone：標準ピンクアイコンでSafariからホーム画面に追加する方法が確実です。iOSの通常のPWAアイコンを任意画像へ確実に差し替えるAPIはありません。</p>
  </section>
 </div>
 <div id="gate"><div class="gc"><div class="logo">🔴🟡</div><h2>4目並べ</h2><p>名前を入れて入室しよう</p><input id="nm" maxlength="12" placeholder="名前(12文字まで)" autocomplete="off"><div id="nmErr"></div><button class="b pri" id="go">はじめる</button></div></div>
@@ -331,18 +332,18 @@ if ('serviceWorker' in navigator) {
 <script>
 (function(){
 'use strict';
-const defaults=['#e66589','#f5d7d8','#f2b9d1','#d488a4','#f5dce6'];
-const fields=['iconC0','iconC1','iconC2','iconC3','iconBg'].map(id=>document.getElementById(id));
+const defaults=['#e66589','#f5d7d8','#f2b9d1','#d488a4','#f5dce6','#fff0f5'];
+const fields=['iconC0','iconC1','iconC2','iconC3','iconBg','iconInner'].map(id=>document.getElementById(id));
 const canvas=document.getElementById('iconPreview'),ctx=canvas.getContext('2d');
 const modal=document.getElementById('iconSettings');
 const instructions=document.getElementById('personalInstructions');
 function valid(v){return typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)}
-try{const saved=JSON.parse(localStorage.getItem('c4-personal-icon-v1')||'null');if(Array.isArray(saved)&&saved.length===5)saved.forEach((v,i)=>{if(valid(v))fields[i].value=v})}catch(e){}
+try{const saved=JSON.parse(localStorage.getItem('c4-personal-icon-v1')||'null');if(Array.isArray(saved)&&saved.length===6)saved.forEach((v,i)=>{if(valid(v))fields[i].value=v})}catch(e){}
 function paint(context,size){
  const colors=fields.map(f=>f.value),s=size/512;
  context.clearRect(0,0,size,size);
  context.fillStyle=colors[4];context.fillRect(0,0,size,size);
-  context.fillStyle="#fff0f5";context.beginPath();context.roundRect(56*s,56*s,400*s,400*s,80*s);context.fill();
+  context.fillStyle=colors[5];context.beginPath();context.roundRect(56*s,56*s,400*s,400*s,80*s);context.fill();
   [[172,172],[340,172],[172,340],[340,340]].forEach(([x,y],i)=>{context.beginPath();context.arc(x*s,y*s,72*s,0,Math.PI*2);context.fillStyle=colors[i];context.fill()});
 }
 function draw(){paint(ctx,512);try{localStorage.setItem('c4-personal-icon-v1',JSON.stringify(fields.map(f=>f.value)))}catch(e){}}
@@ -356,7 +357,7 @@ document.getElementById('iconSave').addEventListener('click',()=>download(png(51
 modal.addEventListener('click',e=>{if(e.target===modal)modal.hidden=true});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)modal.hidden=true});
 const query=new URLSearchParams(location.search),palette=query.get('icon');
-if(palette&&/^[0-9a-f]{30}$/i.test(palette)){
+if(palette&&/^[0-9a-f]{36}$/i.test(palette)){
  const cs=palette.match(/.{6}/g).map(s=>'#'+s);cs.forEach((v,i)=>fields[i].value=v);
  // Install pages use their own per-palette manifest; the SW generates the assets.
  const link=document.querySelector('link[rel="manifest"]');if(link && !(/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)))link.href='./personal-manifest/'+palette+'.webmanifest';
@@ -399,11 +400,19 @@ if(iosDevice){
  const hint=document.querySelector('#iconSettings .icon-hint:last-child');if(hint)hint.textContent='iPhoneでは標準のピンクアイコンでホーム画面に追加します。Safariでゲーム本体を開いて共有 → ホーム画面に追加を選んでください。';
 }
 const target=document.getElementById('personalInstall');
-if(palette&&/^[0-9a-f]{30}$/i.test(palette)){
+if(palette&&/^[0-9a-f]{36}$/i.test(palette)){
  target.textContent='この色でホーム画面に追加する';
  instructions.textContent='Android：Chromeのメニューから「アプリをインストール」または「ホーム画面に追加」を選んでください。';
 }
 draw();
+})();
+</script>
+<script>
+(function(){
+ if(new URLSearchParams(location.search).get('install')!=='ios')return;
+ const tip=document.createElement('div');tip.id='iosInstallTip';tip.style.cssText='position:fixed;z-index:99999;left:12px;right:12px;bottom:12px;padding:16px 18px;border-radius:16px;background:#fff1f6;color:#542f41;box-shadow:0 4px 22px #0005;font:14px/1.65 -apple-system,system-ui,sans-serif';
+ tip.innerHTML='<b>iPhoneに追加するには</b><div>Safariの共有ボタン →「ホーム画面に追加」→「追加」を押してください。<br>追加後はピンクのアイコンから、このゲームの名前入力画面が開きます。</div><button id="dismissInstallTip" style="margin-top:9px;border:0;border-radius:9px;padding:8px 16px;background:#d487a3;color:white">閉じる</button>';
+ document.body.appendChild(tip);document.getElementById('dismissInstallTip').onclick=()=>tip.remove();
 })();
 </script>
 </body>
