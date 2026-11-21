@@ -155,9 +155,14 @@ main{padding-bottom:88px!important}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 (function(){
-var DBURL="ここにFirebaseのdatabaseURLを貼る";
-firebase.initializeApp({databaseURL:DBURL});
-var R=function(p){return firebase.database().ref(p)};
+var DBURL="https://mokunarabe-default-rtdb.asia-southeast1.firebasedatabase.app/";
+var firebaseSetupError="";
+try {
+ if (!/^https:\/\/[^\s"']+(?:firebaseio\.com|firebasedatabase\.app)\/?$/i.test(DBURL)) throw new Error("FirebaseのdatabaseURLが未設定、または形式が違います");
+ firebase.initializeApp({databaseURL:DBURL});
+} catch(e) { firebaseSetupError=e.message || String(e); }
+window.c4FirebaseSetupError=firebaseSetupError;
+var R=function(p){if(window.c4FirebaseSetupError)throw Error(window.c4FirebaseSetupError);return firebase.database().ref(p)};
 function snap(s){return{id:s.key,exists:s.exists(),data:function(){return s.val()||undefined}}}
 function doc(p){return{get:function(){return R(p).once("value").then(snap)},set:function(d){return R(p).set(d)},update:function(d){return R(p).update(d)},delete:function(){return R(p).remove()},onSnapshot:function(n,e){var f=function(s){n(snap(s))};R(p).on("value",f,e);return function(){R(p).off("value",f)}}}}
 var db={doc:doc,collection:function(p){var q=R(p).orderByChild("at").limitToLast(30);return{orderBy:function(){return this},limit:function(){return this},onSnapshot:function(n,e){var f=function(s){var a=[];s.forEach(function(c){a.unshift(snap(c))});n({docs:a,empty:!a.length,size:a.length})};q.on("value",f,e);return function(){q.off("value",f)}}}}};
@@ -284,7 +289,16 @@ $("again").onclick=again;
 function loadName(){try{return localStorage.getItem("c4name")||""}catch(e){return ""}}
 function saveName(n){try{localStorage.setItem("c4name",n)}catch(e){}if(db&&me)db.doc("data/users/"+me+"/profile").set({name:n}).catch(function(){})}
 $("nm").value=loadName();
-$("go").onclick=function(){initP.then(function(){if(!db){$("nmErr").textContent="接続できません。ログイン状態を確認してください";return}enter()})};
+$("go").onclick=async function(){
+ var btn=$("go"),err=$("nmErr");btn.disabled=true;err.textContent="接続を確認しています…";
+ try{
+  if(window.c4FirebaseSetupError)throw Error(window.c4FirebaseSetupError);
+  await Promise.race([initP,new Promise(function(_,reject){setTimeout(function(){reject(Error("接続確認がタイムアウトしました。通信環境とFirebaseの設定を確認してください"))},8000)})]);
+  if(!db)throw Error("Firebaseに接続できません。Firebaseの設定とネットワークを確認してください");
+  err.textContent="";enter();
+ }catch(e){err.textContent=e.message||"接続できませんでした";console.error("4moku start error:",e)}
+ finally{btn.disabled=false}
+};
 $("nm").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").onclick()});
 $("rename").onclick=$("lobRename").onclick=function(){$("gate").hidden=false;$("nmErr").textContent="";$("nm").focus()};
 $("mk").onclick=createRoom;
@@ -296,11 +310,12 @@ $("snd").onclick=function(){sound=!sound;$("snd").textContent=sound?"🔊 音":"
 window.addEventListener("hashchange",function(){if(db&&started)route()});
 document.addEventListener("keydown",function(e){if(e.ctrlKey||e.metaKey||e.altKey||!$("gate").hidden)return;var n=parseInt(e.key,10);if(n>=1&&n<=7)play(n-1)});
 initP=(async function(){
- try{var u=await claude.use("user"),d=await claude.use("db");
+ try{
+  if(window.c4FirebaseSetupError)throw Error(window.c4FirebaseSetupError);var u=await claude.use("user"),d=await claude.use("db");
   if(!u||!d){$("status").textContent="この環境では対戦機能を使えません(ログインが必要です)";return}
   me=await u.id();db=d;if(!me){db=null;$("status").textContent="ユーザーを特定できません";return}
   if(!$("nm").value){try{var ps=await db.doc("data/users/"+me+"/profile").get();if(ps.exists&&ps.data().name&&!$("nm").value)$("nm").value=ps.data().name}catch(e){}}
- }catch(e){$("status").textContent="初期化に失敗しました"}
+ }catch(e){$("status").textContent="初期化に失敗しました: "+(e.message||e);$("nmErr").textContent="接続設定を確認してください"}
 })();
 })();
 </script>
