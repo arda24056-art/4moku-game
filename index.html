@@ -108,6 +108,7 @@ body{background:linear-gradient(180deg,var(--bg-top,#f7e7ef),var(--bg-bottom,#e7
 .col.drag-target{background:rgba(255,255,255,.19);outline:2px solid rgba(255,255,255,.7);outline-offset:1px}
 #dragDisc{position:fixed;z-index:45;width:46px;height:46px;border-radius:50%;pointer-events:none;display:none;transform:translate(-50%,-50%);border:3px solid rgba(255,255,255,.85);box-shadow:0 9px 18px #0005,inset 0 4px 6px #fff5}
 #dragGuide{font-size:12px;text-align:center;color:var(--sub);margin:6px 0 3px;min-height:18px}
+#resultScreen[hidden]{display:none!important}
 #resultScreen{position:fixed;inset:0;z-index:42;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(12,15,35,.76);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .result-card{width:min(100%,420px);position:relative;overflow:hidden;text-align:center;padding:32px 22px 26px;border-radius:26px;background:linear-gradient(150deg,#fff8fc,#f1e8ff);color:#33253d;box-shadow:0 24px 80px #0008;animation:resultPop .45s cubic-bezier(.2,1.5,.4,1) both}
 @keyframes resultPop{from{transform:translateY(24px) scale(.88);opacity:0}to{transform:none;opacity:1}}
@@ -158,7 +159,7 @@ button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
 .avatar-label{display:flex;align-items:center;gap:6px;min-width:0}.avatar-label b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #avatarStage{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:18px}
 #avatarStage[hidden]{display:none!important}
-.avatar-panel{width:min(100%,390px);background:var(--card);padding:24px;border-radius:20px;text-align:center;border:1px solid var(--line)}
+.avatar-panel{max-height:94dvh;overflow-y:auto;width:min(100%,390px);background:var(--card);padding:24px;border-radius:20px;text-align:center;border:1px solid var(--line)}
 .avatar-large{width:104px;height:104px;border-radius:50%;object-fit:cover;background:var(--hole);display:block;margin:15px auto;border:3px solid var(--line)}
 .avatar-panel .b{width:100%;margin-top:9px;min-height:45px}
 .avatar-panel p{font-size:13px;color:var(--sub);line-height:1.6}
@@ -186,6 +187,14 @@ button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
 #game .board{flex:none;overscroll-behavior:none;-webkit-touch-callout:none}
 #game .col,#game .cell{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 @media(max-height:620px){#game:not([hidden]){justify-content:flex-start}}
+
+/* Profile crop editor: touch and pointer drag + zoom */
+#avatarCropArea[hidden]{display:none!important}
+#avatarCropArea{margin:12px auto;max-width:280px}
+#avatarCropCanvas{width:min(100%,240px);height:auto;aspect-ratio:1;display:block;margin:auto;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;background:#e7e7ef;box-shadow:0 0 0 3px var(--line)}
+#avatarZoom{width:100%;accent-color:#dc7199;margin:8px 0}
+.avatar-crop-actions{display:flex;gap:8px}.avatar-crop-actions button{flex:1}
+#avatarCropArea p{margin:7px 0;font-size:12px}
 </style>
 </head>
 <body>
@@ -254,6 +263,13 @@ button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
 <h2 id="avatarTitle">プロフィールアイコンを設定</h2><p>写真アプリ・ファイルから画像を選べます。名前の横に丸く表示され、対戦相手にも共有されます。</p>
 <img id="avatarPreview" class="avatar-large" alt="アイコンのプレビュー" src="" hidden>
 <div id="avatarPlaceholder" style="font-size:60px">👤</div>
+<div id="avatarCropArea" hidden>
+ <p><b>丸い枠に合わせて写真を調整</b></p>
+ <canvas id="avatarCropCanvas" width="320" height="320" aria-label="写真の位置調整"></canvas>
+ <p>写真を指で動かして位置調整。下のバーで拡大・縮小。</p>
+ <input id="avatarZoom" type="range" min="1" max="4" step="0.01" value="1" aria-label="写真の拡大率">
+ <div class="avatar-crop-actions"><button type="button" class="b" id="avatarCropCancel">やり直す</button><button type="button" class="b pri" id="avatarCropApply">この位置で決定</button></div>
+</div>
 <input id="avatarFile" type="file" accept="image/*" style="display:none">
 <button type="button" class="b" id="avatarChoose">📷 写真から選ぶ</button>
 <button type="button" class="b" id="avatarRemove">アイコンを削除</button>
@@ -293,7 +309,7 @@ window.claude={use:function(n){return Promise.resolve(n==="db"?db:n==="user"?{id
 (function(){
 var W=7,H=6,EMPTY=".".repeat(42);
 var db=null,me=null,unsub=null,room="main",state=null,prev=null,claimed=false,busy=false,sound=true,hovCol=-1,myName="",lobUnsub=null,started=false,syncing=false,initP=null,canHover=!!(window.matchMedia&&matchMedia("(hover:hover)").matches);
-var dragging=false,dragPointer=null,dragCol=-1,ignoreClickUntil=0,lastResultKey="",resultTimer=null;
+var dragging=false,dragPointer=null,dragCol=-1,ignoreClickUntil=0,lastResultKey="",resultTimer=null,undoObservedVersion=0;
 var $=function(i){return document.getElementById(i)};
 function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove("show")},1800)}
 function getRoom(){var h=(location.hash||"").slice(1);return /^[A-Za-z0-9-]{1,24}$/.test(h)?h:""}
@@ -426,12 +442,15 @@ function timeTravel(redo){
   if(!current||!current.history||!!current.history.undone!==!!h.undone||current.board!==expected.board||current.moves!==expected.moves)return;
   var next=Object.assign({},current,restore);
   next.history=Object.assign({},current.history,{undone:!redo});
+  next.actionVersion=(Number(current.actionVersion)||0)+1;
+  next.actionType=redo?'redo':'undo';
   return next;
  },undefined,false).then(function(result){
   if(!result.committed){toast("すでに盤面が変わっています");return}
   // Immediately restore the actual game view on both devices via realtime state.
   var updated=result.snapshot&&result.snapshot.val();
   if(updated){state=updated;render()}
+  // Both players receive the same game state from Firebase onSnapshot.
   if(!redo){
    clearTimeout(resultTimer);lastResultKey='';$('resultScreen').hidden=true;
    clearDrag();
@@ -452,7 +471,9 @@ function onSnap(snap){
    db.doc("games/"+room).set({board:EMPTY,turn:"R",starter:"R",last:-1,moves:0,winner:null,winLine:[],scores:{R:0,Y:0},streak:{R:0,Y:0},best:{R:0,Y:0},names:{R:myName,Y:""},avatars:{R:avatarData||null,Y:null},players:{R:me,Y:null}}).catch(function(){claimed=false;$("status").textContent="部屋を作れませんでした(権限を確認してください)"})}
   return}
  state=snap.data();
- if(!state.winner){clearTimeout(resultTimer);lastResultKey='';$('resultScreen').hidden=true}
+ if(!state.winner){clearTimeout(resultTimer);lastResultKey='';$('resultScreen').hidden=true;clearDrag()}
+ // A result overlay must never survive a synchronized undo on another device.
+ if(state.history&&state.history.undone){clearTimeout(resultTimer);lastResultKey='';$('resultScreen').hidden=true}
  var p=state.players||{};
  if(p.R!==me&&p.Y!==me&&!p.Y&&!claimed){claimed=true;
   db.doc("games/"+room).update({players:{R:p.R,Y:me},names:{R:(state.names||{}).R||"",Y:myName},avatars:{R:(state.avatars||{}).R||null,Y:avatarData||null}}).catch(function(){claimed=false})}
@@ -501,14 +522,47 @@ function setAvatarLocal(v){avatarData=v;try{if(v)localStorage.setItem('c4avatar-
 function showAvatarPreview(){var el=$('avatarPreview');el.hidden=!avatarData;el.src=avatarData||'';$('avatarPlaceholder').hidden=!!avatarData}
 function updateAvatarDisplay(k,v){var el=$('av'+k);var ok=typeof v==='string'&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)&&v.length<28000;el.hidden=!ok;$('avFallback'+k).hidden=ok;if(ok)el.src=v;else el.removeAttribute('src')}
 function syncAvatar(){var rl=role();if(!rl||!state||!db)return;var av=state.avatars||{};if((av[rl]||'')===avatarData||avatarSyncPending===room+':'+rl+':'+avatarData)return;avatarSyncPending=room+':'+rl+':'+avatarData;var update={};update['avatars/'+rl]=avatarData||null;db.doc('games/'+room).update(update).catch(function(){toast('アイコンを同期できませんでした')}).then(function(){avatarSyncPending=''})}
-function showAvatarStage(edit){avatarEditing=!!edit;setAvatarLocal(readAvatar());$('avatarErr').textContent='';$('avatarStage').hidden=false}
-function finishAvatar(){ $('avatarStage').hidden=true;if(db&&me)db.doc('data/users/'+me+'/profile').update({name:myName,avatar:avatarData||null}).catch(function(){});if(!started){started=true;route()}else{syncName();syncAvatar()}}
+function showAvatarStage(edit){clearCrop();avatarEditing=!!edit;setAvatarLocal(readAvatar());$('avatarErr').textContent='';$('avatarStage').hidden=false}
+function finishAvatar(){ if(cropImage){$('avatarErr').textContent='先に「この位置で決定」を押してください';return} $('avatarStage').hidden=true;if(db&&me)db.doc('data/users/'+me+'/profile').update({name:myName,avatar:avatarData||null}).catch(function(){});if(!started){started=true;route()}else{syncName();syncAvatar()}}
 $('avatarChoose').onclick=function(){$('avatarFile').click()};
-$('avatarFile').onchange=function(){var f=this.files&&this.files[0];if(!f)return;if(!f.type.startsWith('image/')){$('avatarErr').textContent='画像ファイルを選んでください';return}if(f.size>12*1024*1024){$('avatarErr').textContent='12MB以下の画像を選んでください';return}
- var url=URL.createObjectURL(f),im=new Image();im.onload=function(){URL.revokeObjectURL(url);var c=document.createElement('canvas');c.width=c.height=96;var cx=c.getContext('2d'),w=im.naturalWidth,h=im.naturalHeight,side=Math.min(w,h);cx.drawImage(im,(w-side)/2,(h-side)/2,side,side,0,0,96,96);var out=c.toDataURL('image/jpeg',.65);if(out.length>27000){$('avatarErr').textContent='画像を圧縮できませんでした';return}setAvatarLocal(out);$('avatarErr').textContent='画像を設定しました'};im.onerror=function(){URL.revokeObjectURL(url);$('avatarErr').textContent='画像を読み込めませんでした'};im.src=url;this.value=''};
-$('avatarRemove').onclick=function(){setAvatarLocal('');$('avatarErr').textContent='アイコンを削除しました'};
-$('avatarContinue').onclick=finishAvatar;$('avatarSkip').onclick=finishAvatar;
-$('avatarBack').onclick=function(){$('avatarStage').hidden=true;$('gate').hidden=false;$('nm').focus()};
+// Crop locally before uploading. No external service or photo permissions beyond file picker.
+var cropImage=null,cropUrl='',cropX=0,cropY=0,cropScale=1,cropDrag=null;
+function drawCrop(){if(!cropImage)return;var c=$('avatarCropCanvas'),ctx=c.getContext('2d'),n=c.width;
+ ctx.clearRect(0,0,n,n);ctx.fillStyle='#dfe1e9';ctx.fillRect(0,0,n,n);
+ var base=n/Math.min(cropImage.naturalWidth,cropImage.naturalHeight),sc=base*cropScale;
+ var w=cropImage.naturalWidth*sc,h=cropImage.naturalHeight*sc;
+ var limX=Math.max(0,(w-n)/2),limY=Math.max(0,(h-n)/2);
+ cropX=Math.min(limX,Math.max(-limX,cropX));cropY=Math.min(limY,Math.max(-limY,cropY));
+ ctx.save();ctx.beginPath();ctx.arc(n/2,n/2,n/2,0,Math.PI*2);ctx.clip();ctx.drawImage(cropImage,(n-w)/2+cropX,(n-h)/2+cropY,w,h);ctx.restore();
+ ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=4;ctx.beginPath();ctx.arc(n/2,n/2,n/2-3,0,Math.PI*2);ctx.stroke();
+}
+function clearCrop(){if(cropUrl){URL.revokeObjectURL(cropUrl);cropUrl=''}cropImage=null;cropDrag=null;$('avatarCropArea').hidden=true;$('avatarChoose').hidden=false}
+function beginCrop(f){if(!f.type.startsWith('image/')){$('avatarErr').textContent='画像ファイルを選んでください';return}
+ if(f.size>12*1024*1024){$('avatarErr').textContent='12MB以下の画像を選んでください';return}
+ clearCrop();cropUrl=URL.createObjectURL(f);var im=new Image();im.onload=function(){cropImage=im;cropX=0;cropY=0;cropScale=1;$('avatarZoom').value='1';$('avatarCropArea').hidden=false;$('avatarChoose').hidden=true;$('avatarPreview').hidden=true;$('avatarPlaceholder').hidden=true;$('avatarErr').textContent='';drawCrop()};im.onerror=function(){clearCrop();$('avatarErr').textContent='画像を読み込めませんでした'};im.src=cropUrl;
+}
+$('avatarFile').onchange=function(){var f=this.files&&this.files[0];if(f)beginCrop(f);this.value=''};
+$('avatarZoom').oninput=function(){cropScale=Number(this.value)||1;drawCrop()};
+(function(){var cv=$('avatarCropCanvas');
+ function start(x,y,id){cropDrag={x:x,y:y,id:id,ox:cropX,oy:cropY}}
+ function move(x,y){if(!cropDrag)return;var rect=cv.getBoundingClientRect(),ratio=cv.width/rect.width;cropX=cropDrag.ox+(x-cropDrag.x)*ratio;cropY=cropDrag.oy+(y-cropDrag.y)*ratio;drawCrop()}
+ cv.addEventListener('pointerdown',function(e){if(e.pointerType==='touch'||!cropImage)return;start(e.clientX,e.clientY,e.pointerId);try{cv.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+ cv.addEventListener('pointermove',function(e){if(e.pointerType!=='touch'&&cropDrag&&cropDrag.id===e.pointerId){move(e.clientX,e.clientY);e.preventDefault()}});
+ ['pointerup','pointercancel','lostpointercapture'].forEach(function(t){cv.addEventListener(t,function(){cropDrag=null})});
+ // iOS fallback when pointer capture is unreliable.
+ cv.addEventListener('touchstart',function(e){if(!cropImage||!e.touches.length)return;var t=e.touches[0];start(t.clientX,t.clientY,'touch');e.preventDefault()},{passive:false});
+ cv.addEventListener('touchmove',function(e){if(!cropDrag||!e.touches.length)return;var t=e.touches[0];move(t.clientX,t.clientY);e.preventDefault()},{passive:false});
+ ['touchend','touchcancel'].forEach(function(t){cv.addEventListener(t,function(){cropDrag=null},{passive:false})});
+})();
+$('avatarCropCancel').onclick=function(){clearCrop();showAvatarPreview();$('avatarErr').textContent='別の写真を選べます'};
+$('avatarCropApply').onclick=function(){if(!cropImage)return;drawCrop();var c=document.createElement('canvas');c.width=c.height=96;var ctx=c.getContext('2d');ctx.drawImage($('avatarCropCanvas'),0,0,96,96);
+ var data=c.toDataURL('image/jpeg',.65);if(data.length>27000){data=c.toDataURL('image/jpeg',.4)}
+ if(data.length>27000){$('avatarErr').textContent='画像が大きすぎます。別の写真を選んでください';return}
+ clearCrop();setAvatarLocal(data);$('avatarErr').textContent='丸いアイコンを保存しました';
+};
+$('avatarRemove').onclick=function(){clearCrop();setAvatarLocal('');$('avatarErr').textContent='アイコンを削除しました'};
+$('avatarContinue').onclick=finishAvatar;$('avatarSkip').onclick=function(){clearCrop();finishAvatar()};
+$('avatarBack').onclick=function(){clearCrop();$('avatarStage').hidden=true;$('gate').hidden=false;$('nm').focus()};
 var themeDefs={themeRed:'#e5484d',themeYellow:'#f5c542',themeBoard:'#2f5fd0',themeHole:'#dfe6fb',themeButton:'#33253d',themeButtonText:'#ffffff',themeOutline:'#ffffff'};
 var themeCss={themeRed:'--R',themeYellow:'--Y',themeBoard:'--custom-board',themeHole:'--custom-hole',themeButton:'--custom-btn',themeButtonText:'--custom-btn-text',themeOutline:'--custom-outline'};
 function themeApply(){var vals={};Object.keys(themeDefs).forEach(function(id){var v=$(id).value;document.documentElement.style.setProperty(themeCss[id],v);vals[id]=v});try{localStorage.setItem('c4-game-theme-v1',JSON.stringify(vals))}catch(e){}}
