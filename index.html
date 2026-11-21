@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>4目並べ</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="theme-color" content="#2f5fd0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="4目並べ">
 <style>
 :root{--bg:#f4f5f8;--fg:#1c2030;--sub:#6a7084;--card:#fff;--board:#2f5fd0;--hole:#dfe6fb;--R:#e5484d;--Y:#f5c542;--line:#d9dce6;--ok:#1a9b5a;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
@@ -79,6 +86,19 @@ main{padding-bottom:88px!important}
 .sw.on{outline:3px solid var(--fg);outline-offset:1px}
 .cl{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--sub)}
 .cl input{width:44px;height:30px;border:0;padding:0;background:none}
+
+/* Personal icon designer */
+#iconSettings{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.65);display:grid;place-items:center;padding:18px}
+#iconSettings[hidden]{display:none!important}
+.icon-panel{width:min(100%,390px);max-height:90dvh;overflow:auto;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 48px #0005}
+.icon-panel h2{font-size:19px;margin:0 0 12px}
+.icon-preview{display:block;width:150px;height:150px;margin:0 auto 14px;border-radius:26px}
+.icon-colors{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.icon-colors label{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px;padding:8px;border:1px solid var(--line);border-radius:9px}
+.icon-colors input{width:44px;height:36px;border:0;background:transparent;cursor:pointer}
+.icon-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.icon-actions button{flex:1;min-height:44px}
+.icon-hint{font-size:12px;color:var(--sub);line-height:1.6;margin-top:12px}
 </style>
 </head>
 <body>
@@ -103,17 +123,39 @@ main{padding-bottom:88px!important}
 <h1>ロビー <small id="meLbl"></small></h1>
 <div class="card"><b>新規部屋を作成</b><div class="row"><input id="rn" maxlength="20" placeholder="部屋の名前を付けてね" autocomplete="off"><button class="b pri" id="mk">作成</button></div><div id="rnErr"></div></div>
 <h2 class="sec">部屋一覧</h2><div id="rooms"></div>
-<div class="btns"><button class="b" id="lobRename">名前を変更</button></div>
+<div class="btns"><button class="b" id="lobRename">名前を変更</button><a class="b" href="./install.html" style="text-decoration:none;display:inline-block">📱 ホーム画面アイコンを作る</a></div>
 </main>
 <button class="b" id="palBtn" aria-label="背景色">🎨</button>
-<div id="pal" hidden><div id="sws"></div><label class="cl">自由に選ぶ <input type="color" id="cbg" value="#f4f5f8"></label></div>
+<div id="pal" hidden><div id="sws"></div><label class="cl">自由に選ぶ <input type="color" id="cbg" value="#f4f5f8"></label><a class="b" href="./install.html" style="margin-top:10px;width:100%;display:block;text-align:center;text-decoration:none">◉ ホーム画面アイコンを選ぶ</a></div>
+<div id="iconSettings" hidden role="dialog" aria-modal="true" aria-labelledby="iconSettingsTitle">
+ <section class="icon-panel">
+  <h2 id="iconSettingsTitle">🎨 自分のアイコンを作る</h2>
+  <canvas id="iconPreview" class="icon-preview" width="512" height="512" aria-label="アイコンのプレビュー"></canvas>
+  <div class="icon-colors">
+   <label>左上 <input type="color" id="iconC0" value="#e5484d"></label>
+   <label>右上 <input type="color" id="iconC1" value="#f5c542"></label>
+   <label>左下 <input type="color" id="iconC2" value="#f5c542"></label>
+   <label>右下 <input type="color" id="iconC3" value="#e5484d"></label>
+   <label>背景 <input type="color" id="iconBg" value="#152c68"></label>
+  </div>
+  <div class="icon-actions">
+   <button type="button" class="b" id="iconReset">初期色</button>
+   <button type="button" class="b pri" id="iconSave">PNGを保存</button>
+   <button type="button" class="b" id="iconClose">閉じる</button>
+  </div>
+  <p class="icon-hint">5色すべて自由に変更できます。設定はこの端末に保存されます。</p>
+  <button type="button" class="b pri" id="personalInstall" style="width:100%;margin-top:12px">この配色でホーム画面に追加する</button>
+  <input id="personalUrl" readonly aria-label="カスタムアイコン用URL" placeholder="ここに専用URLが表示されます" style="width:100%;margin-top:8px" onclick="this.select()"><div id="personalInstructions" class="icon-hint" style="white-space:pre-line;margin-top:12px" aria-live="polite"></div>
+  <p class="icon-hint">Android：Chromeで専用インストール画面から追加。iPhone：生成したPNGを「ショートカット」アプリのホーム画面アイコンに指定する方法が確実です。iOSの通常のPWAアイコンを任意画像へ確実に差し替えるAPIはありません。</p>
+ </section>
+</div>
 <div id="gate"><div class="gc"><div class="logo">🔴🟡</div><h2>4目並べ</h2><p>名前を入れて入室しよう</p><input id="nm" maxlength="12" placeholder="名前(12文字まで)" autocomplete="off"><div id="nmErr"></div><button class="b pri" id="go">はじめる</button></div></div>
 <div id="toast"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 (function(){
-var DBURL="https://mokunarabe-default-rtdb.asia-southeast1.firebasedatabase.app/";
+var DBURL="ここにFirebaseのdatabaseURLを貼る";
 firebase.initializeApp({databaseURL:DBURL});
 var R=function(p){return firebase.database().ref(p)};
 function snap(s){return{id:s.key,exists:s.exists(),data:function(){return s.val()||undefined}}}
@@ -260,6 +302,86 @@ initP=(async function(){
   if(!$("nm").value){try{var ps=await db.doc("data/users/"+me+"/profile").get();if(ps.exists&&ps.data().name&&!$("nm").value)$("nm").value=ps.data().name}catch(e){}}
  }catch(e){$("status").textContent="初期化に失敗しました"}
 })();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function (error) {
+      console.warn('PWA service worker registration failed:', error);
+    });
+  });
+}
+</script>
+<script>
+(function(){
+'use strict';
+const defaults=['#e5484d','#f5c542','#f5c542','#e5484d','#152c68'];
+const fields=['iconC0','iconC1','iconC2','iconC3','iconBg'].map(id=>document.getElementById(id));
+const canvas=document.getElementById('iconPreview'),ctx=canvas.getContext('2d');
+const modal=document.getElementById('iconSettings');
+const instructions=document.getElementById('personalInstructions');
+function valid(v){return typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v)}
+try{const saved=JSON.parse(localStorage.getItem('c4-personal-icon-v1')||'null');if(Array.isArray(saved)&&saved.length===5)saved.forEach((v,i)=>{if(valid(v))fields[i].value=v})}catch(e){}
+function paint(context,size){
+ const colors=fields.map(f=>f.value),s=size/512;
+ context.clearRect(0,0,size,size);
+ context.fillStyle=colors[4];context.fillRect(0,0,size,size);
+ [[164,164],[348,164],[164,348],[348,348]].forEach(([x,y],i)=>{context.beginPath();context.arc(x*s,y*s,76*s,0,Math.PI*2);context.fillStyle=colors[i];context.fill()});
+}
+function draw(){paint(ctx,512);try{localStorage.setItem('c4-personal-icon-v1',JSON.stringify(fields.map(f=>f.value)))}catch(e){}}
+fields.forEach(f=>f.addEventListener('input',draw));
+document.getElementById('openIconSettings').addEventListener('click',()=>{document.getElementById('pal').hidden=true;modal.hidden=false;draw()});
+document.getElementById('iconClose').addEventListener('click',()=>modal.hidden=true);
+document.getElementById('iconReset').addEventListener('click',()=>{fields.forEach((f,i)=>f.value=defaults[i]);draw()});
+function png(size){const c=document.createElement('canvas');c.width=c.height=size;paint(c.getContext('2d'),size);return c.toDataURL('image/png')}
+function download(data,name){const a=document.createElement('a');a.download=name;a.href=data;document.body.appendChild(a);a.click();a.remove()}
+document.getElementById('iconSave').addEventListener('click',()=>download(png(512),'4moku-my-icon.png'));
+modal.addEventListener('click',e=>{if(e.target===modal)modal.hidden=true});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!modal.hidden)modal.hidden=true});
+const query=new URLSearchParams(location.search),palette=query.get('icon');
+if(palette&&/^[0-9a-f]{30}$/i.test(palette)){
+ const cs=palette.match(/.{6}/g).map(s=>'#'+s);cs.forEach((v,i)=>fields[i].value=v);
+ // Install pages use their own per-palette manifest; the SW generates the assets.
+ const link=document.querySelector('link[rel="manifest"]');if(link)link.href='./personal-manifest/'+palette+'.webmanifest';
+ document.title='4目並べ';
+}
+async function storeAssets(key){
+ const reg=await navigator.serviceWorker.register('./sw.js');
+ await navigator.serviceWorker.ready;
+ const cache=await caches.open('four-in-a-row-custom-icons-v1');
+ const base=new URL('./',location.href);
+ for(const size of [192,512]){
+   const data=png(size);const blob=await (await fetch(data)).blob();
+   await cache.put(new URL('personal-icon/'+key+'/'+size+'.png',base),new Response(blob,{headers:{'Content-Type':'image/png'}}));
+ }
+ const manifest={id:new URL('./?icon='+key,base).pathname+'?icon='+key,name:'4目並べ',short_name:'4目並べ',start_url:new URL('./?icon='+key,base).pathname+'?icon='+key,scope:base.pathname,display:'standalone',background_color:fields[4].value,theme_color:fields[4].value,icons:[192,512].map(size=>({src:new URL('personal-icon/'+key+'/'+size+'.png',base).pathname,sizes:size+'x'+size,type:'image/png',purpose:'any'}))};
+ await cache.put(new URL('personal-manifest/'+key+'.webmanifest',base),new Response(JSON.stringify(manifest),{headers:{'Content-Type':'application/manifest+json'}}));
+ return reg;
+}
+document.getElementById('personalInstall').addEventListener('click',async()=>{
+ draw();const key=fields.map(f=>f.value.slice(1)).join('').toLowerCase();
+ const url=new URL('./install.html?icon='+key,location.href).href;
+ const ua=navigator.userAgent||'',ios=/iPad|iPhone|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+ instructions.textContent='準備しています…';
+ try{
+   if('serviceWorker' in navigator&&'caches' in window)await storeAssets(key);
+   if(ios){
+     instructions.textContent='iPhoneでは、この配色のPNGを保存して「ショートカット」アプリで設定してください。\n①「PNGを保存」\n② ショートカットで「URLを開く」を作り、下のURLを指定\n③「ホーム画面に追加」で保存したPNGを選択\n※通常のPWAの独立起動と異なる場合があります。';
+     download(png(512),'4moku-my-icon.png');
+   }else{
+     instructions.textContent='Android：開いたページをChromeで表示し、メニューから「アプリをインストール」または「ホーム画面に追加」を選んでください。すでにインストール済みの場合は古いアプリを削除してから試してください。端末によってはChromeが同じアプリとして扱う場合があります。';
+     location.href=url;
+   }
+   const link=document.getElementById('personalUrl');if(link)link.value=url;
+ }catch(e){instructions.textContent='インストール準備ができませんでした。まずGitHub PagesのHTTPSで開き直してください。詳細：'+e.message;}
+});
+const target=document.getElementById('personalInstall');
+if(palette&&/^[0-9a-f]{30}$/i.test(palette)){
+ target.textContent='この色でホーム画面に追加する';
+ instructions.textContent='Android：Chromeのメニューから「アプリをインストール」または「ホーム画面に追加」を選んでください。';
+}
+draw();
 })();
 </script>
 </body>
