@@ -164,37 +164,49 @@ button.b:not(.pri):not(.room-delete){border-color:var(--custom-btn)!important}
 .avatar-panel p{font-size:13px;color:var(--sub);line-height:1.6}
 #palBtn{z-index:35}
 #resultLobby{width:100%;margin-top:10px}
+
+/* v5: gameplay-first compact interface */
+#dragGuide{display:none!important}
+#status{height:30px;min-height:30px;max-height:30px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:5px 0 9px;font-size:14px}
+#game .btns{margin-top:10px;gap:7px;justify-content:flex-start;padding-right:52px}
+#game .btns .b{flex:0 1 auto;min-height:38px;padding:7px 11px;font-size:12px}
+#palBtn{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:44px;height:44px;z-index:39}
+#pal{position:fixed;inset:auto 10px calc(64px + env(safe-area-inset-bottom,0px)) 10px;max-height:min(75dvh,680px);overflow-y:auto;overscroll-behavior:contain;z-index:40;width:auto;max-width:500px;margin:auto;border:1px solid var(--line);border-radius:16px;padding:14px;background:var(--card);box-shadow:0 12px 50px #0006}
+#pal[hidden]{display:none!important}
+#game .p i{display:none}
+.avatar-ring{width:36px;height:36px;display:grid;place-items:center;flex:none;border-radius:50%;border:3px solid var(--c);background:var(--card);overflow:hidden}
+.avatar-ring .profile-avatar{width:100%;height:100%;border:0;border-radius:50%;object-fit:cover;display:block}
+.avatar-ring .profile-avatar[hidden],.avatar-fallback[hidden]{display:none!important}
+.avatar-fallback{font-size:19px;line-height:1}
+.avatar-label{gap:7px}
+#game .pi{min-width:0}
+@media(max-width:480px){.avatar-ring{width:31px;height:31px;border-width:3px}.avatar-fallback{font-size:16px}#game .p{padding:8px 6px}#game .p em{font-size:19px}#game .p b{font-size:12px}}
 </style>
 </head>
 <body>
 <main id="game" hidden>
 <h1>4目並べ <small id="roomLbl"></small></h1>
 <div class="players">
-  <div class="p" id="pR" style="--c:var(--R)"><i></i><div class="pi"><span class="avatar-label"><img class="profile-avatar" id="avR" alt="赤のアイコン" hidden><b id="nR">赤</b></span><span id="wR"></span><span class="k" id="kR"></span></div><em id="sR">0</em></div>
-  <div class="p" id="pY" style="--c:var(--Y)"><i></i><div class="pi"><span class="avatar-label"><img class="profile-avatar" id="avY" alt="黄のアイコン" hidden><b id="nY">黄</b></span><span id="wY"></span><span class="k" id="kY"></span></div><em id="sY">0</em></div>
+  <div class="p" id="pR" style="--c:var(--R)"><i></i><div class="pi"><span class="avatar-label"><span class="avatar-ring"><img class="profile-avatar" id="avR" alt="赤のアイコン" hidden><span class="avatar-fallback" id="avFallbackR">👤</span></span><b id="nR">赤</b></span><span id="wR"></span><span class="k" id="kR"></span></div><em id="sR">0</em></div>
+  <div class="p" id="pY" style="--c:var(--Y)"><i></i><div class="pi"><span class="avatar-label"><span class="avatar-ring"><img class="profile-avatar" id="avY" alt="黄のアイコン" hidden><span class="avatar-fallback" id="avFallbackY">👤</span></span><b id="nY">黄</b></span><span id="wY"></span><span class="k" id="kY"></span></div><em id="sY">0</em></div>
 </div>
 <div id="status">接続中…</div>
-<div id="dragGuide">盤面を押して左右に動かし、指を離して置く（戻した後に置くとやり直し確定）</div>
 <div class="board" id="board" aria-label="盤面"></div>
 <div id="dragDisc" aria-hidden="true"></div>
 <div class="btns">
-  <button class="b pri" id="again" disabled>もう一度</button>
    <button class="b" id="undo" disabled>↶ 1手戻す</button>
    <button class="b" id="redo" hidden>↷ 戻す前に進む</button>
-  <button class="b" id="copy">招待リンクをコピー</button>
-  <button class="b" id="newRoom">ロビーへ</button>
-  <button class="b" id="rename">名前・アイコン</button><button class="b" id="themeGame">🎨 駒・ボタンの色を変更</button>
-  <button class="b" id="snd">🔊 音</button>
+  <button class="b" id="newRoom">⌂ ロビー</button>
 </div>
-<p class="note">縦・横・斜めに4つ揃えたら勝ち。列をタップして置きます。<span class="kb">(キーボードの 1〜7 でも可)</span><br>最初に入った2人が対戦者、3人目以降は観戦です。</p>
+
 </main>
 <main id="lobby" hidden>
-<h1>ロビー <small id="meLbl"></small></h1><p class="note" style="text-align:left;margin:2px 0 12px">🎨「色を変更」で駒・盤面・ボタン・背景を変更できます。部屋の削除は確認後に実行されます。</p>
+<h1>ロビー <small id="meLbl"></small></h1>
 <div class="card"><b>新規部屋を作成</b><div class="row"><input id="rn" maxlength="20" placeholder="部屋の名前を付けてね" autocomplete="off"><button class="b pri" id="mk">作成</button></div><div id="rnErr"></div></div>
 <h2 class="sec">部屋一覧</h2><div id="rooms"></div>
-<div class="btns"><button class="b" id="lobRename">👤 名前・写真アイコン</button><button class="b" id="themeLobby">🎨 駒・ボタンの色を変更</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
+<div class="btns"><button class="b" id="lobRename">👤 名前・写真アイコン</button><a class="b" href="./install.html" class="platform-install-link" style="text-decoration:none;display:inline-block">📱 ホーム画面に追加する</a></div>
 </main>
-<button class="b" id="palBtn" aria-label="背景色">🎨</button>
+<button class="b" id="palBtn" aria-label="配色設定を開く" title="配色設定">🎨</button>
 <div id="pal" hidden><button type="button" class="b" id="closePal" style="width:100%;margin-bottom:8px">✕ 設定を閉じる</button><div id="sws"></div><div class="gradient-settings"><label>上の色 <input type="color" id="bgTop" value="#f7e7ef"></label><label>下の色 <input type="color" id="bgBottom" value="#e7e8fa"></label></div><label class="cl">単色にする <input type="color" id="cbg" value="#f4f5f8"></label><div style="font-weight:700;font-size:13px;margin-top:12px">ゲーム全体の色を変更</div>
 <div class="theme-row">
 <label>赤の駒 <input type="color" id="themeRed" value="#e5484d"></label>
@@ -294,8 +306,8 @@ bd.appendChild(col)}}
 function dragColumnAt(x){var rect=$('board').getBoundingClientRect();if(x<rect.left-24||x>rect.right+24)return -1;var v=Math.floor((x-rect.left)/rect.width*W);return Math.max(0,Math.min(W-1,v))}
 function dragPreview(c,x,y){var d=$('dragDisc');dragCol=c;d.style.left=x+'px';d.style.top=y+'px';d.style.background=role()==='R'?'var(--R)':'var(--Y)';d.style.display='block';
  var cols=$('board').children;for(var j=0;j<W;j++){cols[j].classList.toggle('drag-target',j===c&&c>=0&&lowRow(state.board,j)>=0);for(var r=0;r<H;r++){var cell=cols[j].children[r];cell.classList.remove('g');cell.style.removeProperty('--gc')}}
- if(c>=0&&lowRow(state.board,c)>=0){var cell=cols[c].children[lowRow(state.board,c)];cell.classList.add('g');cell.style.setProperty('--gc',role()==='R'?'var(--R)':'var(--Y)');$('dragGuide').textContent=(c+1)+'列目に落とす • 指を離して決定'}else $('dragGuide').textContent='置ける列まで動かしてください';}
-function clearDrag(){dragging=false;dragPointer=null;dragCol=-1;$('dragDisc').style.display='none';$('dragGuide').textContent='盤面を押して左右に動かし、指を離して置く（戻した後に置くとやり直し確定）';var cols=$('board').children;for(var c=0;c<W;c++){cols[c].classList.remove('drag-target');for(var r=0;r<H;r++){cols[c].children[r].classList.remove('g');cols[c].children[r].style.removeProperty('--gc')}}}
+ if(c>=0&&lowRow(state.board,c)>=0){var cell=cols[c].children[lowRow(state.board,c)];cell.classList.add('g');cell.style.setProperty('--gc',role()==='R'?'var(--R)':'var(--Y)');void 0}else void 0;}
+function clearDrag(){dragging=false;dragPointer=null;dragCol=-1;$('dragDisc').style.display='none';var cols=$('board').children;for(var c=0;c<W;c++){cols[c].classList.remove('drag-target');for(var r=0;r<H;r++){cols[c].children[r].classList.remove('g');cols[c].children[r].style.removeProperty('--gc')}}}
 function initDrag(){var board=$('board');board.addEventListener('pointerdown',function(e){if(!canPlay()||busy||e.button!==0)return;dragging=true;dragPointer=e.pointerId;try{board.setPointerCapture(e.pointerId)}catch(_){}dragPreview(dragColumnAt(e.clientX),e.clientX,e.clientY);e.preventDefault()});
  board.addEventListener('pointermove',function(e){if(!dragging||e.pointerId!==dragPointer)return;dragPreview(dragColumnAt(e.clientX),e.clientX,e.clientY);e.preventDefault()});
  board.addEventListener('pointerup',function(e){if(!dragging||e.pointerId!==dragPointer)return;var c=dragColumnAt(e.clientX);ignoreClickUntil=Date.now()+450;clearDrag();if(c>=0)play(c);e.preventDefault()});
@@ -333,8 +345,6 @@ function render(){
  else if(s.winner){st.className="win";st.textContent=rl?(rl===s.winner?"🎉 あなたの勝ち!":(nm2[s.winner]||"相手")+"の勝ち"):(nm2[s.winner]||nm[s.winner])+"の勝ち!"}
  else if(rl)st.textContent=rl===s.turn?"あなたの番です":(nm2[s.turn]||"相手")+"の番です…";
  else st.textContent="観戦中:"+(nm2[s.turn]||nm[s.turn])+"の番";
- $("again").disabled=!(s&&rl&&two&&s.moves>0);
- $("again").textContent=s&&s.winner?"もう一度":"最初からやり直す";
  paintHover();
  if(newMove){if(s.winner&&s.winner!=="D"){beep(rl===s.winner?660:300,.4)}else beep(440,.12)}
  scheduleResult(s,hadWinner);
@@ -418,7 +428,7 @@ var avatarData="",avatarEditing=false,avatarSyncPending="";
 function readAvatar(){try{return localStorage.getItem('c4avatar-v1')||''}catch(e){return ''}}
 function setAvatarLocal(v){avatarData=v;try{if(v)localStorage.setItem('c4avatar-v1',v);else localStorage.removeItem('c4avatar-v1')}catch(e){}showAvatarPreview()}
 function showAvatarPreview(){var el=$('avatarPreview');el.hidden=!avatarData;el.src=avatarData||'';$('avatarPlaceholder').hidden=!!avatarData}
-function updateAvatarDisplay(k,v){var el=$('av'+k);var ok=typeof v==='string'&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)&&v.length<28000;el.hidden=!ok;if(ok)el.src=v;else el.removeAttribute('src')}
+function updateAvatarDisplay(k,v){var el=$('av'+k);var ok=typeof v==='string'&&/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)&&v.length<28000;el.hidden=!ok;$('avFallback'+k).hidden=ok;if(ok)el.src=v;else el.removeAttribute('src')}
 function syncAvatar(){var rl=role();if(!rl||!state||!db)return;var av=state.avatars||{};if((av[rl]||'')===avatarData||avatarSyncPending===room+':'+rl+':'+avatarData)return;avatarSyncPending=room+':'+rl+':'+avatarData;var update={};update['avatars/'+rl]=avatarData||null;db.doc('games/'+room).update(update).catch(function(){toast('アイコンを同期できませんでした')}).then(function(){avatarSyncPending=''})}
 function showAvatarStage(edit){avatarEditing=!!edit;setAvatarLocal(readAvatar());$('avatarErr').textContent='';$('avatarStage').hidden=false}
 function finishAvatar(){ $('avatarStage').hidden=true;if(db&&me)db.doc('data/users/'+me+'/profile').update({name:myName,avatar:avatarData||null}).catch(function(){});if(!started){started=true;route()}else{syncName();syncAvatar()}}
@@ -431,7 +441,7 @@ $('avatarBack').onclick=function(){$('avatarStage').hidden=true;$('gate').hidden
 var themeDefs={themeRed:'#e5484d',themeYellow:'#f5c542',themeBoard:'#2f5fd0',themeHole:'#dfe6fb',themeButton:'#33253d',themeButtonText:'#ffffff',themeOutline:'#ffffff'};
 var themeCss={themeRed:'--R',themeYellow:'--Y',themeBoard:'--custom-board',themeHole:'--custom-hole',themeButton:'--custom-btn',themeButtonText:'--custom-btn-text',themeOutline:'--custom-outline'};
 function themeApply(){var vals={};Object.keys(themeDefs).forEach(function(id){var v=$(id).value;document.documentElement.style.setProperty(themeCss[id],v);vals[id]=v});try{localStorage.setItem('c4-game-theme-v1',JSON.stringify(vals))}catch(e){}}
-function themeInit(){var old={};try{old=JSON.parse(localStorage.getItem('c4-game-theme-v1')||'{}')||{}}catch(e){}Object.keys(themeDefs).forEach(function(id){var v=old[id];$(id).value=/^#[0-9a-f]{6}$/i.test(v||'')?v:themeDefs[id];$(id).addEventListener('input',themeApply)});var board=$('themePreviewBoard');for(var i=0;i<28;i++){var d=document.createElement('span');if([15,16,23].indexOf(i)>=0)d.className='red';if([17,24,25].indexOf(i)>=0)d.className='yellow';board.appendChild(d)}themeApply();$('closePal').onclick=function(){$('pal').hidden=true};$('themeReset').onclick=function(){Object.keys(themeDefs).forEach(function(id){$(id).value=themeDefs[id]});themeApply()};$('themeGame').onclick=$('themeLobby').onclick=function(){$('pal').hidden=false}}
+function themeInit(){var old={};try{old=JSON.parse(localStorage.getItem('c4-game-theme-v1')||'{}')||{}}catch(e){}Object.keys(themeDefs).forEach(function(id){var v=old[id];$(id).value=/^#[0-9a-f]{6}$/i.test(v||'')?v:themeDefs[id];$(id).addEventListener('input',themeApply)});var board=$('themePreviewBoard');for(var i=0;i<28;i++){var d=document.createElement('span');if([15,16,23].indexOf(i)>=0)d.className='red';if([17,24,25].indexOf(i)>=0)d.className='yellow';board.appendChild(d)}themeApply();$('closePal').onclick=function(){$('pal').hidden=true};$('themeReset').onclick=function(){Object.keys(themeDefs).forEach(function(id){$(id).value=themeDefs[id]});themeApply()};}
 function syncName(){var rl=role();if(!rl||!state||!myName||syncing)return;var nm=state.names||{};if(nm[rl]===myName)return;syncing=true;var n={R:nm.R||"",Y:nm.Y||""};n[rl]=myName;db.doc("games/"+room).update({names:n}).catch(function(){}).then(function(){syncing=false})}
 function enter(){var n=$("nm").value.trim().slice(0,12);if(!n){$("nmErr").textContent="名前を入力してください";return}myName=n;saveName(n);$("gate").hidden=true;$("nmErr").textContent="";$("meLbl").textContent=myName;showAvatarStage(started)}
 function start(){
@@ -447,7 +457,7 @@ $("resultNext").onclick=again;
 $("undo").onclick=function(){timeTravel(false)};
 $("resultUndo").onclick=function(){timeTravel(false)};
 $("redo").onclick=function(){timeTravel(true)};
-$("again").onclick=again;
+
 function loadName(){try{return localStorage.getItem("c4name")||""}catch(e){return ""}}
 function saveName(n){try{localStorage.setItem("c4name",n)}catch(e){}if(db&&me)db.doc("data/users/"+me+"/profile").update({name:n}).catch(function(){})}
 $("nm").value=loadName();
@@ -462,13 +472,13 @@ $("go").onclick=async function(){
  finally{btn.disabled=false}
 };
 $("nm").addEventListener("keydown",function(e){if(e.key==="Enter")$("go").onclick()});
-$("rename").onclick=$("lobRename").onclick=function(){$("gate").hidden=false;$("nmErr").textContent="";$("nm").focus()};
+$("lobRename").onclick=function(){$("gate").hidden=false;$("nmErr").textContent="";$("nm").focus()};
 $("mk").onclick=createRoom;
 $("rn").addEventListener("keydown",function(e){if(e.key==="Enter")createRoom()});
 $("newRoom").onclick=function(){location.hash="";showLobby()};$("resultLobby").onclick=function(){$("resultScreen").hidden=true;location.hash="";showLobby()};
 initBg();themeInit();setAvatarLocal(readAvatar());
-$("copy").onclick=function(){var u=location.href;(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){toast("リンクをコピーしました")},function(){toast("アドレスバーのURLを共有してください")})};
-$("snd").onclick=function(){sound=!sound;$("snd").textContent=sound?"🔊 音":"🔇 音";if(sound)beep(520,.1)};
+
+
 window.addEventListener("hashchange",function(){if(db&&started)route()});
 document.addEventListener("keydown",function(e){if(e.ctrlKey||e.metaKey||e.altKey||!$("gate").hidden)return;var n=parseInt(e.key,10);if(n>=1&&n<=7)play(n-1)});
 initP=(async function(){
@@ -483,11 +493,25 @@ initP=(async function(){
 </script>
 <script>
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('./sw.js?v=6').catch(function (error) {
-      console.warn('PWA service worker registration failed:', error);
+  (function(){
+    var initialController=navigator.serviceWorker.controller;
+    var refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(!initialController||refreshing)return;
+      refreshing=true;
+      // A newly activated worker means a new deployed version is ready.
+      location.reload();
     });
-  });
+    function checkUpdate(){navigator.serviceWorker.getRegistration().then(function(reg){if(reg)reg.update().catch(function(){})}).catch(function(){})}
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./sw.js?v=7',{updateViaCache:'none'}).then(function(reg){
+        // Check every time the installed app is opened, plus when foregrounded.
+        reg.update().catch(function(){});
+      }).catch(function(error){console.warn('PWA service worker registration failed:',error)});
+    });
+    document.addEventListener('visibilitychange',function(){if(!document.hidden)checkUpdate()});
+    window.addEventListener('pageshow',function(){checkUpdate()});
+  })();
 }
 </script>
 <script>
@@ -525,7 +549,7 @@ if(palette&&/^[0-9a-f]{36}$/i.test(palette)){
  document.title='4目並べ';
 }
 async function storeAssets(key){
- const reg=await navigator.serviceWorker.register('./sw.js?v=6');
+ const reg=await navigator.serviceWorker.register('./sw.js?v=7');
  await navigator.serviceWorker.ready;
  const cache=await caches.open('four-in-a-row-custom-icons-v1');
  const base=new URL('./',location.href);
